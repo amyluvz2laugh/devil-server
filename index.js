@@ -203,19 +203,17 @@ app.get('/', (req, res) => {
   });
 });
 
+
 // ============================================
-// DEVIL POV - FULL CONTEXT VERSION
+// DEVIL POV - WITH FULL CONTEXT FROM WIX
 // ============================================
 app.post('/devil-pov', async (req, res) => {
   try {
-    console.log("👿 Devil POV request received");
+    console.log("👿 Devil POV - Full context mode");
     const startTime = Date.now();
     
-    const { 
+    const {
       previousChapter,
-      characterContext,      // Character personality from chatbot field
-      chatHistory,           // Array of chat sessions
-      relatedChapters,       // Array of related chapter summaries
       characterName,
       characterTags,
       storyTags,
@@ -225,6 +223,20 @@ app.post('/devil-pov', async (req, res) => {
     if (!previousChapter) {
       return res.status(400).json({ error: "No chapter provided" });
     }
+    
+    // ============================================
+    // FETCH ALL CONTEXT FROM WIX IN PARALLEL
+    // ============================================
+    console.log("🔍 Fetching context from Wix CMS...");
+    const contextStart = Date.now();
+    
+    const [characterContext, chatHistory, relatedChapters] = await Promise.all([
+      getCharacterContext(characterTags),
+      getChatHistory(characterTags),
+      getRelatedChapters(storyTags)
+    ]);
+    
+    console.log(`✅ Context fetched in ${Date.now() - contextStart}ms`);
     
     // ============================================
     // BUILD SYSTEM PROMPT
@@ -247,7 +259,7 @@ ${toneContext}`;
     }
     
     // Add related chapters
-    if (relatedChapters && relatedChapters.length > 0) {
+    if (relatedChapters.length > 0) {
       systemPrompt += `\n\nRELATED CHAPTERS FROM THIS STORY:\n`;
       relatedChapters.forEach(ch => {
         systemPrompt += `[${ch.title}]\n${ch.content}\n\n`;
@@ -255,7 +267,7 @@ ${toneContext}`;
     }
     
     // Add chat history
-    if (chatHistory && chatHistory.length > 0) {
+    if (chatHistory.length > 0) {
       systemPrompt += `\n\nCONVERSATIONS THE AUTHOR HAS HAD WITH YOU:\n`;
       chatHistory.forEach((session, idx) => {
         systemPrompt += `\n[Session ${idx + 1}]\n`;
@@ -267,7 +279,11 @@ ${toneContext}`;
     
     systemPrompt += `\n\nWrite ONLY the chapter from your POV. No explanations, no meta-commentary. Pure character voice. This is YOUR response to what just happened.`;
     
-    console.log("📊 Context length:", systemPrompt.length, "chars");
+    console.log("📊 Context summary:");
+    console.log("   Total prompt length:", systemPrompt.length, "chars");
+    console.log("   Character personality:", characterContext ? "YES" : "NO");
+    console.log("   Chat history:", chatHistory.length, "sessions");
+    console.log("   Related chapters:", relatedChapters.length);
     
     // ============================================
     // CALL AI
@@ -287,7 +303,12 @@ ${toneContext}`;
       status: 'success',
       result: result,
       charsGenerated: result.length,
-      processingTime: Date.now() - startTime
+      processingTime: Date.now() - startTime,
+      contextUsed: {
+        characterPersonality: !!characterContext,
+        chatSessions: chatHistory.length,
+        relatedChapters: relatedChapters.length
+      }
     });
     
   } catch (err) {
@@ -308,5 +329,6 @@ app.listen(PORT, () => {
   console.log(`   Models: ${PRIMARY_MODEL}, ${BACKUP_MODEL}, ${TERTIARY_MODEL}`);
   console.log(`   API Key configured: ${process.env.OPENROUTER_API_KEY ? 'YES ✅' : 'NO ❌'}`);
 });
+
 
 
