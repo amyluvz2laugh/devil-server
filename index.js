@@ -64,6 +64,133 @@ async function callAI(messages, temperature = 0.9, maxTokens = 2500) {
   
   throw new Error("All models failed");
 }
+// ============================================
+// QUERY WIX CMS
+// ============================================
+async function queryWixCMS(collection, filter = {}, limit = 10) {
+  try {
+    console.log(`🔍 Querying Wix collection: ${collection}`);
+    
+    const response = await fetch(`https://www.wixapis.com/wix-data/v2/items/query`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': WIX_API_KEY,
+        'wix-site-id': WIX_SITE_ID,
+        'wix-account-id': WIX_ACCOUNT_ID
+      },
+      body: JSON.stringify({
+        dataCollectionId: collection,
+        query: {
+          filter: filter,
+          sort: [],
+          paging: { limit: limit }
+        }
+      })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ Wix API error for ${collection}:`, errorText);
+      return { items: [] };
+    }
+    
+    const data = await response.json();
+    console.log(`✅ Found ${data.dataItems?.length || 0} items in ${collection}`);
+    return { items: data.dataItems || [] };
+    
+  } catch (error) {
+    console.error(`❌ Error querying ${collection}:`, error);
+    return { items: [] };
+  }
+}
+
+// ============================================
+// GET CHARACTER CONTEXT FROM WIX
+// ============================================
+async function getCharacterContext(characterTags) {
+  if (!characterTags || characterTags.length === 0) {
+    return "";
+  }
+  
+  const charTag = Array.isArray(characterTags) ? characterTags[0] : characterTags;
+  console.log("👤 Fetching character:", charTag);
+  
+  const result = await queryWixCMS("Characters", {
+    charactertags: { $eq: charTag }
+  }, 1);
+  
+  if (result.items.length > 0) {
+    const personality = result.items[0].data?.chatbot || "";
+    console.log("✅ Character personality:", personality ? "YES" : "NO");
+    return personality;
+  }
+  
+  return "";
+}
+
+// ============================================
+// GET CHAT HISTORY FROM WIX
+// ============================================
+async function getChatHistory(characterTags) {
+  if (!characterTags || characterTags.length === 0) {
+    return [];
+  }
+  
+  const charTag = Array.isArray(characterTags) ? characterTags[0] : characterTags;
+  console.log("💬 Fetching chat history for:", charTag);
+  
+  const result = await queryWixCMS("ChatWithCharacters", {
+    character: { $eq: charTag }
+  }, 5);
+  
+  if (result.items.length > 0) {
+    console.log(`✅ Found ${result.items.length} chat sessions`);
+    
+    const chatHistory = result.items.map(item => {
+      try {
+        const chatBox = item.data?.chatBox;
+        const messages = typeof chatBox === 'string' ? JSON.parse(chatBox) : chatBox;
+        return { messages: messages || [] };
+      } catch (e) {
+        return { messages: [] };
+      }
+    });
+    
+    return chatHistory;
+  }
+  
+  return [];
+}
+
+// ============================================
+// GET RELATED CHAPTERS FROM WIX
+// ============================================
+async function getRelatedChapters(storyTags) {
+  if (!storyTags || storyTags.length === 0) {
+    return [];
+  }
+  
+  const storyTag = Array.isArray(storyTags) ? storyTags[0] : storyTags;
+  console.log("📚 Fetching chapters with tag:", storyTag);
+  
+  const result = await queryWixCMS("BackupChapters", {
+    storyTag: { $eq: storyTag }
+  }, 3);
+  
+  if (result.items.length > 0) {
+    console.log(`✅ Found ${result.items.length} related chapters`);
+    
+    const chapters = result.items.map(item => ({
+      title: item.data?.title || "Untitled",
+      content: (item.data?.chapterContent || "").substring(0, 1500)
+    }));
+    
+    return chapters;
+  }
+  
+  return [];
+}
 
 // ============================================
 // HEALTH CHECK
@@ -181,4 +308,5 @@ app.listen(PORT, () => {
   console.log(`   Models: ${PRIMARY_MODEL}, ${BACKUP_MODEL}, ${TERTIARY_MODEL}`);
   console.log(`   API Key configured: ${process.env.OPENROUTER_API_KEY ? 'YES ✅' : 'NO ❌'}`);
 });
+
 
