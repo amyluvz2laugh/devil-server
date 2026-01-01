@@ -321,6 +321,83 @@ ${toneContext}`;
 });
 
 // ============================================
+// INTEL SEARCH ENDPOINT - NEW!
+// ============================================
+app.post('/api/search', async (req, res) => {
+  try {
+    const { characterTags, storyTags, catalystTags } = req.body;
+    
+    console.log('🔍 Intel Search Request:', { characterTags, storyTags, catalystTags });
+    
+    const results = {
+      characters: [],
+      chapters: [],
+      chats: [],
+      catalysts: []
+    };
+    
+    // Search Characters by characterTags
+    if (characterTags && characterTags.length > 0) {
+      for (const tag of characterTags) {
+        const charResult = await queryWixCMS("Characters", {
+          charactertags: { $hasSome: [tag] }
+        }, 10);
+        results.characters.push(...charResult.items.map(item => item.data));
+      }
+    }
+    
+    // Search Chapters by storyTags
+    if (storyTags && storyTags.length > 0) {
+      for (const tag of storyTags) {
+        const chapterResult = await queryWixCMS("BackupChapters", {
+          storyTag: { $hasSome: [tag] }
+        }, 10);
+        results.chapters.push(...chapterResult.items.map(item => item.data));
+      }
+    }
+    
+    // Search Chats by characterTags
+    if (characterTags && characterTags.length > 0) {
+      for (const tag of characterTags) {
+        const chatResult = await queryWixCMS("ChatWithCharacters", {
+          character: { $eq: tag }
+        }, 5);
+        results.chats.push(...chatResult.items.map(item => item.data));
+      }
+    }
+    
+    // Search Catalysts/Tone Tags
+    if (catalystTags && catalystTags.length > 0) {
+      for (const tag of catalystTags) {
+        const catalystResult = await queryWixCMS("Characters", {
+          toneTags: { $hasSome: [tag] }
+        }, 10);
+        results.catalysts.push(...catalystResult.items.map(item => item.data));
+      }
+    }
+    
+    // Remove duplicates by _id
+    results.characters = [...new Map(results.characters.map(item => [item._id, item])).values()];
+    results.chapters = [...new Map(results.chapters.map(item => [item._id, item])).values()];
+    results.chats = [...new Map(results.chats.map(item => [item._id, item])).values()];
+    results.catalysts = [...new Map(results.catalysts.map(item => [item._id, item])).values()];
+    
+    console.log('✅ Search Results:', {
+      characters: results.characters.length,
+      chapters: results.chapters.length,
+      chats: results.chats.length,
+      catalysts: results.catalysts.length
+    });
+    
+    res.json(results);
+    
+  } catch (error) {
+    console.error('❌ Search error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
 // START SERVER
 // ============================================
 const PORT = process.env.PORT || 3333;
@@ -329,6 +406,7 @@ app.listen(PORT, () => {
   console.log(`   Models: ${PRIMARY_MODEL}, ${BACKUP_MODEL}, ${TERTIARY_MODEL}`);
   console.log(`   API Key configured: ${process.env.OPENROUTER_API_KEY ? 'YES ✅' : 'NO ❌'}`);
 });
+
 
 
 
