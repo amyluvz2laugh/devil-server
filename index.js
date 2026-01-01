@@ -1,7 +1,3 @@
-app.get("/ping", (req, res) => {
-  res.json({ status: "Devil Muse alive" });
-});
-
 const express = require('express');
 const cors = require('cors');
 const app = express();
@@ -333,6 +329,7 @@ app.listen(PORT, () => {
   console.log(`   Models: ${PRIMARY_MODEL}, ${BACKUP_MODEL}, ${TERTIARY_MODEL}`);
   console.log(`   API Key configured: ${process.env.OPENROUTER_API_KEY ? 'YES ✅' : 'NO ❌'}`);
 });
+
 
 
 
