@@ -140,38 +140,57 @@ async function getChatHistory(characterTags) {
   
   const charTag = Array.isArray(characterTags) ? characterTags[0] : characterTags;
   console.log("💬 Step 1: Finding Character ID for tag:", charTag);
-  console.log("   characterTags type:", typeof characterTags);
-  console.log("   characterTags value:", JSON.stringify(characterTags));
-  console.log("   charTag extracted:", charTag);
   
   // First, get the character's _id from the Characters collection
   const characterResult = await queryWixCMS("Characters", {
     charactertags: { $eq: charTag }
   }, 1);
   
-  console.log("📋 Character query result:", JSON.stringify(characterResult, null, 2));
-  console.log("   Items found:", characterResult.items?.length || 0);
-  
   if (characterResult.items.length === 0) {
     console.log("❌ Character not found in Characters collection");
-    console.log("   Tried to find: charactertags = ", charTag);
     return [];
   }
-  
-  console.log("📋 Full character item:", JSON.stringify(characterResult.items[0], null, 2));
   
   const characterId = characterResult.items[0]._id;
   console.log("✅ Found Character ID:", characterId);
   
-  // Rest of the function...
-  const result = await queryWixCMS("ChatWithCharacters", {
-    character: characterId
-  }, 5);
+  // Query ALL chats to see what the reference field actually contains
+  console.log("💬 Step 2: Fetching ALL chats to debug reference field...");
   
-  if (result.items.length > 0) {
-    console.log(`✅ Found ${result.items.length} chat sessions for this character`);
+  const allChatsResult = await queryWixCMS("ChatWithCharacters", {}, 50);
+  
+  console.log(`📊 Total chats in database: ${allChatsResult.items.length}`);
+  console.log("🔍 Inspecting 'character' reference field in each chat:");
+  
+  allChatsResult.items.forEach((item, idx) => {
+    const charRef = item.data?.character;
+    console.log(`   Chat ${idx + 1}:`, {
+      _id: item._id,
+      characterRef: charRef,
+      characterRefType: typeof charRef,
+      isObject: typeof charRef === 'object',
+      refKeys: typeof charRef === 'object' ? Object.keys(charRef) : 'n/a',
+      matches: charRef === characterId || charRef?._id === characterId || charRef?.id === characterId
+    });
+  });
+  
+  // Now try to filter manually since we can see the structure
+  const matchingChats = allChatsResult.items.filter(item => {
+    const charRef = item.data?.character;
     
-    const chatHistory = result.items.map(item => {
+    // Try different ways the reference might be stored
+    if (typeof charRef === 'string') {
+      return charRef === characterId;
+    } else if (typeof charRef === 'object' && charRef !== null) {
+      return charRef._id === characterId || charRef.id === characterId;
+    }
+    return false;
+  });
+  
+  console.log(`✅ Found ${matchingChats.length} chats matching character ID: ${characterId}`);
+  
+  if (matchingChats.length > 0) {
+    const chatHistory = matchingChats.map(item => {
       try {
         const chatBox = item.data?.chatBox;
         const messages = typeof chatBox === 'string' ? JSON.parse(chatBox) : chatBox;
@@ -410,6 +429,7 @@ app.listen(PORT, () => {
   console.log(`   Models: ${PRIMARY_MODEL}, ${BACKUP_MODEL}, ${TERTIARY_MODEL}`);
   console.log(`   API Key configured: ${process.env.OPENROUTER_API_KEY ? 'YES ✅' : 'NO ❌'}`);
 });
+
 
 
 
