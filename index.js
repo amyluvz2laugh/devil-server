@@ -134,57 +134,44 @@ async function getCharacterContext(characterTags) {
 // ============================================
 async function getChatHistory(characterTags) {
   if (!characterTags || characterTags.length === 0) {
+    console.log("❌ No characterTags provided");
     return [];
   }
   
   const charTag = Array.isArray(characterTags) ? characterTags[0] : characterTags;
   console.log("💬 Step 1: Finding Character ID for tag:", charTag);
+  console.log("   characterTags type:", typeof characterTags);
+  console.log("   characterTags value:", JSON.stringify(characterTags));
+  console.log("   charTag extracted:", charTag);
   
   // First, get the character's _id from the Characters collection
   const characterResult = await queryWixCMS("Characters", {
     charactertags: { $eq: charTag }
   }, 1);
   
+  console.log("📋 Character query result:", JSON.stringify(characterResult, null, 2));
+  console.log("   Items found:", characterResult.items?.length || 0);
+  
   if (characterResult.items.length === 0) {
     console.log("❌ Character not found in Characters collection");
+    console.log("   Tried to find: charactertags = ", charTag);
     return [];
   }
   
+  console.log("📋 Full character item:", JSON.stringify(characterResult.items[0], null, 2));
+  
   const characterId = characterResult.items[0]._id;
   console.log("✅ Found Character ID:", characterId);
-  console.log("📋 Character ID type:", typeof characterId, "Value:", characterId);
   
-  // Now query ChatWithCharacters using the reference ID
-  console.log("💬 Step 2: Fetching chats for Character ID:", characterId);
-  
-  // Try this format for reference fields - Wix wants it in an array
+  // Rest of the function...
   const result = await queryWixCMS("ChatWithCharacters", {
-    character: { $hasSome: [characterId] }  // 👈 Reference fields sometimes need $hasSome
-  }, 10);  // Get more to see what we're actually getting
+    character: characterId
+  }, 5);
   
-  console.log("📊 Debug - All chat results:");
   if (result.items.length > 0) {
-    result.items.forEach((item, idx) => {
-      console.log(`   Chat ${idx + 1}:`, {
-        chatId: item._id,
-        characterRef: item.data?.character,  // 👈 Let's see what this actually looks like
-        characterRefType: typeof item.data?.character
-      });
-    });
-  }
-  
-  // Filter manually as backup in case Wix query isn't working
-  const filteredItems = result.items.filter(item => {
-    const chatCharId = item.data?.character;
-    const match = chatCharId === characterId;
-    console.log(`   Comparing: ${chatCharId} === ${characterId} ? ${match}`);
-    return match;
-  });
-  
-  console.log(`✅ Found ${filteredItems.length} chat sessions for THIS character (${characterId})`);
-  
-  if (filteredItems.length > 0) {
-    const chatHistory = filteredItems.map(item => {
+    console.log(`✅ Found ${result.items.length} chat sessions for this character`);
+    
+    const chatHistory = result.items.map(item => {
       try {
         const chatBox = item.data?.chatBox;
         const messages = typeof chatBox === 'string' ? JSON.parse(chatBox) : chatBox;
@@ -423,6 +410,7 @@ app.listen(PORT, () => {
   console.log(`   Models: ${PRIMARY_MODEL}, ${BACKUP_MODEL}, ${TERTIARY_MODEL}`);
   console.log(`   API Key configured: ${process.env.OPENROUTER_API_KEY ? 'YES ✅' : 'NO ❌'}`);
 });
+
 
 
 
