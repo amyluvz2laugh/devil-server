@@ -144,9 +144,9 @@ async function getChatHistory(characterTags) {
   console.log("💬 Step 1: Finding Character ID for tag:", charTag);
   
   // First, get the character's _id from the Characters collection
-  const characterResult = await queryWixCMS("Characters", {
-    charactertags: { $eq: charTag }
-  }, 1);
+const result = await queryWixCMS("ChatWithCharacters", {
+  character: characterId  // ✅ Reference fields just need the ID directly
+}, 5);
   
   if (characterResult.items.length === 0) {
     console.log("❌ Character not found in Characters collection");
@@ -405,6 +405,7 @@ app.listen(PORT, () => {
   console.log(`   Models: ${PRIMARY_MODEL}, ${BACKUP_MODEL}, ${TERTIARY_MODEL}`);
   console.log(`   API Key configured: ${process.env.OPENROUTER_API_KEY ? 'YES ✅' : 'NO ❌'}`);
 });
+
 
 
 
