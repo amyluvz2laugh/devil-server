@@ -195,6 +195,37 @@ async function getRelatedChapters(storyTags) {
 }
 
 // ============================================
+// GET CATALYST INTEL FROM WIX
+// ============================================
+async function getCatalystIntel(catalystTags) {
+  if (!catalystTags || catalystTags.length === 0) {
+    return [];
+  }
+  
+  const catalystTag = Array.isArray(catalystTags) ? catalystTags[0] : catalystTags;
+  console.log("⚡ Fetching catalyst intel:", catalystTag);
+  
+  const result = await queryWixCMS("Catalyst", {
+    catalystTag: { $eq: catalystTag }
+  }, 10);
+  
+  if (result.items.length > 0) {
+    console.log(`✅ Found ${result.items.length} catalyst entries`);
+    
+    const catalysts = result.items.map(item => ({
+      tag: item.data?.catalystTag || "",
+      title: item.data?.title || ""
+    }));
+    
+    return catalysts;
+  }
+  
+  console.log("⚠️ No catalyst intel found for this tag");
+  return [];
+}
+
+
+// ============================================
 // HEALTH CHECK
 // ============================================
 app.get('/', (req, res) => {
@@ -219,7 +250,8 @@ app.post('/devil-pov', async (req, res) => {
       characterName,
       characterTags,
       storyTags,
-      toneTags
+      toneTags,
+      catalystTags  // NEW FIELD
     } = req.body;
     
     if (!previousChapter) {
@@ -235,7 +267,8 @@ app.post('/devil-pov', async (req, res) => {
     const [characterContext, chatHistory, relatedChapters] = await Promise.all([
       getCharacterContext(characterTags),
       getChatHistory(characterTags),
-      getRelatedChapters(storyTags)
+      getRelatedChapters(storyTags),
+      getCatalystIntel(catalystTags)  // NEW QUERY
     ]);
     
     console.log(`✅ Context fetched in ${Date.now() - contextStart}ms`);
@@ -258,6 +291,13 @@ ${toneContext}`;
     // Add character personality
     if (characterContext) {
       systemPrompt += `\n\nYOUR CORE PERSONALITY:\n${characterContext}`;
+    }
+    // Add catalyst intel - NEW SECTION
+    if (catalystIntel.length > 0) {
+      systemPrompt += `\n\nNARRATIVE CATALYSTS & PLOT HOOKS:\n`;
+      catalystIntel.forEach(catalyst => {
+        systemPrompt += `[${catalyst.tag}] ${catalyst.title}\n`;
+      });
     }
     
     // Add related chapters
@@ -286,6 +326,7 @@ ${toneContext}`;
     console.log("   Character personality:", characterContext ? "YES" : "NO");
     console.log("   Chat history:", chatHistory.length, "sessions");
     console.log("   Related chapters:", relatedChapters.length);
+    console.log("   Catalyst intel:", catalystIntel.length);  // NEW LOG
     
     // ============================================
     // CALL AI
@@ -309,7 +350,8 @@ ${toneContext}`;
       contextUsed: {
         characterPersonality: !!characterContext,
         chatSessions: chatHistory.length,
-        relatedChapters: relatedChapters.length
+        relatedChapters: relatedChapters.length,
+        catalystIntel: catalystIntel.length  // NEW FIELD
       }
     });
     
@@ -387,3 +429,4 @@ app.listen(PORT, () => {
   console.log(`   Models: ${PRIMARY_MODEL}, ${BACKUP_MODEL}, ${TERTIARY_MODEL}`);
   console.log(`   API Key configured: ${process.env.OPENROUTER_API_KEY ? 'YES ✅' : 'NO ❌'}`);
 });
+
