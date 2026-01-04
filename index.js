@@ -152,18 +152,39 @@ async function getChatHistory(characterTags) {
   
   const characterId = characterResult.items[0]._id;
   console.log("✅ Found Character ID:", characterId);
+  console.log("📋 Character ID type:", typeof characterId, "Value:", characterId);
   
   // Now query ChatWithCharacters using the reference ID
   console.log("💬 Step 2: Fetching chats for Character ID:", characterId);
   
+  // Try this format for reference fields - Wix wants it in an array
   const result = await queryWixCMS("ChatWithCharacters", {
-    character: characterId  // ✅ Reference fields just need the ID directly
-  }, 5);
+    character: { $hasSome: [characterId] }  // 👈 Reference fields sometimes need $hasSome
+  }, 10);  // Get more to see what we're actually getting
   
+  console.log("📊 Debug - All chat results:");
   if (result.items.length > 0) {
-    console.log(`✅ Found ${result.items.length} chat sessions for this character`);
-    
-    const chatHistory = result.items.map(item => {
+    result.items.forEach((item, idx) => {
+      console.log(`   Chat ${idx + 1}:`, {
+        chatId: item._id,
+        characterRef: item.data?.character,  // 👈 Let's see what this actually looks like
+        characterRefType: typeof item.data?.character
+      });
+    });
+  }
+  
+  // Filter manually as backup in case Wix query isn't working
+  const filteredItems = result.items.filter(item => {
+    const chatCharId = item.data?.character;
+    const match = chatCharId === characterId;
+    console.log(`   Comparing: ${chatCharId} === ${characterId} ? ${match}`);
+    return match;
+  });
+  
+  console.log(`✅ Found ${filteredItems.length} chat sessions for THIS character (${characterId})`);
+  
+  if (filteredItems.length > 0) {
+    const chatHistory = filteredItems.map(item => {
       try {
         const chatBox = item.data?.chatBox;
         const messages = typeof chatBox === 'string' ? JSON.parse(chatBox) : chatBox;
@@ -402,6 +423,7 @@ app.listen(PORT, () => {
   console.log(`   Models: ${PRIMARY_MODEL}, ${BACKUP_MODEL}, ${TERTIARY_MODEL}`);
   console.log(`   API Key configured: ${process.env.OPENROUTER_API_KEY ? 'YES ✅' : 'NO ❌'}`);
 });
+
 
 
 
