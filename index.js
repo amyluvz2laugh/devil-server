@@ -108,20 +108,45 @@ async function queryWixCMS(collection, filter = {}, limit = 10) {
 // ============================================
 // GET CHARACTER CONTEXT FROM WIX
 // ============================================
+async function getCharacterContext(characterTags) {
+  if (!characterTags || characterTags.length === 0) {
+    return "";
+  }
+  
+  const charTag = Array.isArray(characterTags) ? characterTags[0] : characterTags;
+  console.log("👤 Fetching character:", charTag);
+  
+  const result = await queryWixCMS("Characters", {
+    charactertags: { $eq: charTag }
+  }, 1);
+  
+  if (result.items.length > 0) {
+    const personality = result.items[0].data?.chatbot || "";
+    console.log("✅ Character personality:", personality ? "YES" : "NO");
+    return personality;
+  }
+  
+  return "";
+}
+
+// ============================================
+// GET CHAT HISTORY FROM WIX
+// ============================================
 async function getChatHistory(characterTags) {
   if (!characterTags) {
     console.log("❌ No characterTags provided");
     return [];
   }
   
-  console.log("💬 Fetching chat history for character tag:", characterTags);
+  const charTag = Array.isArray(characterTags) ? characterTags[0] : characterTags;
+  console.log("💬 Fetching chat history for character tag:", charTag);
   
-  // Query ChatWithCharacters by charactertags field
+  // Query ChatWithCharacters by charactertags field (NOT the reference field)
   const result = await queryWixCMS("ChatWithCharacters", {
-    charactertags: { $eq: characterTags }
+    charactertags: { $eq: charTag }
   }, 5);
   
-  console.log(`📊 Found ${result.items.length} chat sessions for character tag: ${characterTags}`);
+  console.log(`📊 Found ${result.items.length} chat sessions for character tag: ${charTag}`);
   
   if (result.items.length > 0) {
     const chatHistory = result.items.map(item => {
@@ -140,85 +165,6 @@ async function getChatHistory(characterTags) {
   console.log("⚠️ No chat history found for this character");
   return [];
 }
-
-// ============================================
-// GET CHAT HISTORY FROM WIX - ONLY THIS CHARACTER (REFERENCE FIELD)
-// ============================================
-async function getChatHistory(characterTags) {
-  if (!characterTags || characterTags.length === 0) {
-    console.log("❌ No characterTags provided");
-    return [];
-  }
-  
-  const charTag = Array.isArray(characterTags) ? characterTags[0] : characterTags;
-  console.log("💬 Step 1: Finding Character ID for tag:", charTag);
-  
-  // First, get the character's _id from the Characters collection
-  const characterResult = await queryWixCMS("Characters", {
-    charactertags: { $eq: charTag }
-  }, 1);
-  
-  if (characterResult.items.length === 0) {
-    console.log("❌ Character not found in Characters collection");
-    return [];
-  }
-  
-  const characterId = characterResult.items[0]._id;
-  console.log("✅ Found Character ID:", characterId);
-  
-  // Query ALL chats to see what the reference field actually contains
-  console.log("💬 Step 2: Fetching ALL chats to debug reference field...");
-  
-  const allChatsResult = await queryWixCMS("ChatWithCharacters", {}, 50);
-  
-  console.log(`📊 Total chats in database: ${allChatsResult.items.length}`);
-  console.log("🔍 Inspecting 'character' reference field in each chat:");
-  
-  allChatsResult.items.forEach((item, idx) => {
-    const charRef = item.data?.character;
-    console.log(`   Chat ${idx + 1}:`, {
-      _id: item._id,
-      characterRef: charRef,
-      characterRefType: typeof charRef,
-      isObject: typeof charRef === 'object',
-      refKeys: typeof charRef === 'object' ? Object.keys(charRef) : 'n/a',
-      matches: charRef === characterId || charRef?._id === characterId || charRef?.id === characterId
-    });
-  });
-  
-  // Now try to filter manually since we can see the structure
-  const matchingChats = allChatsResult.items.filter(item => {
-    const charRef = item.data?.character;
-    
-    // Try different ways the reference might be stored
-    if (typeof charRef === 'string') {
-      return charRef === characterId;
-    } else if (typeof charRef === 'object' && charRef !== null) {
-      return charRef._id === characterId || charRef.id === characterId;
-    }
-    return false;
-  });
-  
-  console.log(`✅ Found ${matchingChats.length} chats matching character ID: ${characterId}`);
-  
-  if (matchingChats.length > 0) {
-    const chatHistory = matchingChats.map(item => {
-      try {
-        const chatBox = item.data?.chatBox;
-        const messages = typeof chatBox === 'string' ? JSON.parse(chatBox) : chatBox;
-        return { messages: messages || [] };
-      } catch (e) {
-        return { messages: [] };
-      }
-    });
-    
-    return chatHistory;
-  }
-  
-  console.log("⚠️ No chat history found for this character");
-  return [];
-}
-
 // ============================================
 // GET RELATED CHAPTERS FROM WIX
 // ============================================
@@ -297,15 +243,18 @@ app.post('/devil-pov', async (req, res) => {
     // ============================================
     // BUILD SYSTEM PROMPT
     // ============================================
-    const characterTraits = characterTags ? `Character traits: ${characterTags}` : '';
+    const characterTraits = characterTags?.length > 0 ? `Character traits: ${characterTags.join(', ')}` : '';
     const storyContext = storyTags?.length > 0 ? `Story: ${storyTags.join(', ')}` : '';
     const toneContext = toneTags?.length > 0 ? `Tone: ${toneTags.join(', ')}` : '';
     
     let systemPrompt = `You are ${characterName || 'the antagonist'}, a dark and complex character. 
+
 Write from YOUR perspective in response to what the author just wrote. Be DARK, VISCERAL, and UNAPOLOGETICALLY YOURSELF. Show your motivations, your twisted logic, your desires. Make the reader uncomfortable. Make them understand you even as they fear you.
+
 ${characterTraits}
 ${storyContext}
 ${toneContext}`;
+
     // Add character personality
     if (characterContext) {
       systemPrompt += `\n\nYOUR CORE PERSONALITY:\n${characterContext}`;
@@ -438,15 +387,3 @@ app.listen(PORT, () => {
   console.log(`   Models: ${PRIMARY_MODEL}, ${BACKUP_MODEL}, ${TERTIARY_MODEL}`);
   console.log(`   API Key configured: ${process.env.OPENROUTER_API_KEY ? 'YES ✅' : 'NO ❌'}`);
 });
-
-
-
-
-
-
-
-
-
-
-
-
