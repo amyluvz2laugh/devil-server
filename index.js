@@ -297,18 +297,15 @@ app.post('/devil-pov', async (req, res) => {
     // ============================================
     // BUILD SYSTEM PROMPT
     // ============================================
-    const characterTraits = characterTags?.length > 0 ? `Character traits: ${characterTags.join(', ')}` : '';
+    const characterTraits = characterTags ? `Character traits: ${characterTags}` : '';
     const storyContext = storyTags?.length > 0 ? `Story: ${storyTags.join(', ')}` : '';
     const toneContext = toneTags?.length > 0 ? `Tone: ${toneTags.join(', ')}` : '';
     
     let systemPrompt = `You are ${characterName || 'the antagonist'}, a dark and complex character. 
-
 Write from YOUR perspective in response to what the author just wrote. Be DARK, VISCERAL, and UNAPOLOGETICALLY YOURSELF. Show your motivations, your twisted logic, your desires. Make the reader uncomfortable. Make them understand you even as they fear you.
-
 ${characterTraits}
 ${storyContext}
 ${toneContext}`;
-
     // Add character personality
     if (characterContext) {
       systemPrompt += `\n\nYOUR CORE PERSONALITY:\n${characterContext}`;
@@ -441,6 +438,7 @@ app.listen(PORT, () => {
   console.log(`   Models: ${PRIMARY_MODEL}, ${BACKUP_MODEL}, ${TERTIARY_MODEL}`);
   console.log(`   API Key configured: ${process.env.OPENROUTER_API_KEY ? 'YES ✅' : 'NO ❌'}`);
 });
+
 
 
 
