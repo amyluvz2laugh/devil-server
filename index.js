@@ -132,9 +132,6 @@ async function getCharacterContext(characterTags) {
 // ============================================
 // GET CHAT HISTORY FROM WIX
 // ============================================
-// ============================================
-// GET CHAT HISTORY FROM WIX - ONLY THIS CHARACTER (REFERENCE FIELD)
-// ============================================
 async function getChatHistory(characterTags) {
   if (!characterTags || characterTags.length === 0) {
     return [];
@@ -405,5 +402,6 @@ app.listen(PORT, () => {
   console.log(`   Models: ${PRIMARY_MODEL}, ${BACKUP_MODEL}, ${TERTIARY_MODEL}`);
   console.log(`   API Key configured: ${process.env.OPENROUTER_API_KEY ? 'YES ✅' : 'NO ❌'}`);
 });
+
 
 
