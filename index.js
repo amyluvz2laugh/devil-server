@@ -179,7 +179,6 @@ async function getChatHistory(characterTags) {
   console.log("⚠️ No chat history found for this character");
   return [];
 }
-
 // ============================================
 // GET RELATED CHAPTERS FROM WIX
 // ============================================
@@ -402,6 +401,7 @@ app.listen(PORT, () => {
   console.log(`   Models: ${PRIMARY_MODEL}, ${BACKUP_MODEL}, ${TERTIARY_MODEL}`);
   console.log(`   API Key configured: ${process.env.OPENROUTER_API_KEY ? 'YES ✅' : 'NO ❌'}`);
 });
+
 
 
 
