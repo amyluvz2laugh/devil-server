@@ -108,25 +108,37 @@ async function queryWixCMS(collection, filter = {}, limit = 10) {
 // ============================================
 // GET CHARACTER CONTEXT FROM WIX
 // ============================================
-async function getCharacterContext(characterTags) {
-  if (!characterTags || characterTags.length === 0) {
-    return "";
+async function getChatHistory(characterTags) {
+  if (!characterTags) {
+    console.log("❌ No characterTags provided");
+    return [];
   }
   
-  const charTag = Array.isArray(characterTags) ? characterTags[0] : characterTags;
-  console.log("👤 Fetching character:", charTag);
+  console.log("💬 Fetching chat history for character tag:", characterTags);
   
-  const result = await queryWixCMS("Characters", {
-    charactertags: { $eq: charTag }
-  }, 1);
+  // Query ChatWithCharacters by charactertags field
+  const result = await queryWixCMS("ChatWithCharacters", {
+    charactertags: { $eq: characterTags }
+  }, 5);
+  
+  console.log(`📊 Found ${result.items.length} chat sessions for character tag: ${characterTags}`);
   
   if (result.items.length > 0) {
-    const personality = result.items[0].data?.chatbot || "";
-    console.log("✅ Character personality:", personality ? "YES" : "NO");
-    return personality;
+    const chatHistory = result.items.map(item => {
+      try {
+        const chatBox = item.data?.chatBox;
+        const messages = typeof chatBox === 'string' ? JSON.parse(chatBox) : chatBox;
+        return { messages: messages || [] };
+      } catch (e) {
+        return { messages: [] };
+      }
+    });
+    
+    return chatHistory;
   }
   
-  return "";
+  console.log("⚠️ No chat history found for this character");
+  return [];
 }
 
 // ============================================
@@ -429,6 +441,7 @@ app.listen(PORT, () => {
   console.log(`   Models: ${PRIMARY_MODEL}, ${BACKUP_MODEL}, ${TERTIARY_MODEL}`);
   console.log(`   API Key configured: ${process.env.OPENROUTER_API_KEY ? 'YES ✅' : 'NO ❌'}`);
 });
+
 
 
 
