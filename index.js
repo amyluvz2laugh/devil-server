@@ -134,33 +134,57 @@ async function getCharacterContext(characterTags) {
 // ============================================
 async function getChatHistory(characterTags) {
   if (!characterTags || characterTags.length === 0) {
+    console.log("⚠️ No character tags provided");
     return [];
   }
   
   const charTag = Array.isArray(characterTags) ? characterTags[0] : characterTags;
-  console.log("💬 Fetching chat history for:", charTag);
+  console.log("💬 Step 1: Looking up character with tag:", charTag);
   
-  const result = await queryWixCMS("ChatWithCharacters", {
-    character: { $eq: charTag }
-  }, 5);
+  // STEP 1: Find the character record by tag
+  const characterResult = await queryWixCMS("Characters", {
+    charactertags: charTag
+  }, 1);
   
-  if (result.items.length > 0) {
-    console.log(`✅ Found ${result.items.length} chat sessions`);
-    
-    const chatHistory = result.items.map(item => {
-      try {
-        const chatBox = item.data?.chatBox;
-        const messages = typeof chatBox === 'string' ? JSON.parse(chatBox) : chatBox;
-        return { messages: messages || [] };
-      } catch (e) {
-        return { messages: [] };
-      }
-    });
-    
-    return chatHistory;
+  if (characterResult.items.length === 0) {
+    console.log("❌ No character found with that tag");
+    return [];
   }
   
-  return [];
+  const characterId = characterResult.items[0]._id;
+  console.log("✅ Found character ID:", characterId);
+  
+  // STEP 2: Query chats using the character's _id
+  console.log("💬 Step 2: Fetching chats for character ID:", characterId);
+  
+  const result = await queryWixCMS("ChatWithCharacters", {
+    character: characterId  // Use the _id from Characters collection
+  }, 50);
+  
+  console.log(`✅ Found ${result.items.length} chat sessions`);
+  
+  if (result.items.length === 0) {
+    return [];
+  }
+  
+  const chatHistory = result.items.map((item, idx) => {
+    try {
+      const chatBox = item.data?.chatBox;
+      if (!chatBox) return { messages: [] };
+      
+      const messages = typeof chatBox === 'string' ? JSON.parse(chatBox) : chatBox;
+      console.log(`   ✅ Session ${idx + 1}: ${messages?.length || 0} messages`);
+      return { messages: messages || [] };
+    } catch (e) {
+      console.error(`   ❌ Failed to parse session ${idx + 1}:`, e.message);
+      return { messages: [] };
+    }
+  });
+  
+  const totalMessages = chatHistory.reduce((sum, session) => sum + session.messages.length, 0);
+  console.log(`📊 Total messages: ${totalMessages}`);
+  
+  return chatHistory;
 }
 
 // ============================================
@@ -385,3 +409,4 @@ app.listen(PORT, () => {
   console.log(`   Models: ${PRIMARY_MODEL}, ${BACKUP_MODEL}, ${TERTIARY_MODEL}`);
   console.log(`   API Key configured: ${process.env.OPENROUTER_API_KEY ? 'YES ✅' : 'NO ❌'}`);
 });
+
