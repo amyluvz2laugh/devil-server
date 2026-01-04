@@ -199,40 +199,26 @@ async function getRelatedChapters(storyTags) {
 // ============================================
 async function getCatalystIntel(catalystTags) {
   if (!catalystTags || catalystTags.length === 0) {
-    return [];
+    return "";
   }
   
   const catalystTag = Array.isArray(catalystTags) ? catalystTags[0] : catalystTags;
   console.log("⚡ Fetching catalyst intel:", catalystTag);
   
   const result = await queryWixCMS("Catalyst", {
-    catalystTag: { $eq: catalystTag }
-  }, 10);
+    title: { $contains: catalystTag }
+  }, 1);
   
   if (result.items.length > 0) {
-    console.log(`✅ Found ${result.items.length} catalyst entries`);
-    
-    const catalysts = result.items.map(item => ({
-      tag: item.data?.catalystTag || "",
-      title: item.data?.title || ""
-    }));
-    
-    return catalysts;
+    const catalystData = result.items[0].data;
+    const catalystInfo = JSON.stringify(catalystData, null, 2);
+    console.log("✅ Catalyst intel:", catalystInfo ? "YES" : "NO");
+    return catalystInfo;
   }
   
   console.log("⚠️ No catalyst intel found for this tag");
-  return [];
+  return "";
 }
-// ============================================
-// HEALTH CHECK
-// ============================================
-app.get('/', (req, res) => {
-  res.json({ 
-    status: 'alive', 
-    message: 'Devil Muse server is breathing',
-    timestamp: new Date().toISOString()
-  });
-});
 
 // ============================================
 // UPDATED DEVIL POV - WITH CATALYST CONTEXT
@@ -293,11 +279,8 @@ ${toneContext}`;
     }
     
     // Add catalyst intel - NEW SECTION
-    if (catalystIntel.length > 0) {
-      systemPrompt += `\n\nNARRATIVE CATALYSTS & PLOT HOOKS:\n`;
-      catalystIntel.forEach(catalyst => {
-        systemPrompt += `[${catalyst.tag}] ${catalyst.title}\n`;
-      });
+    if (catalystIntel) {
+      systemPrompt += `\n\nNARRATIVE CATALYST:\n${catalystIntel}`;
     }
     
     // Add related chapters
@@ -326,7 +309,7 @@ ${toneContext}`;
     console.log("   Character personality:", characterContext ? "YES" : "NO");
     console.log("   Chat history:", chatHistory.length, "sessions");
     console.log("   Related chapters:", relatedChapters.length);
-    console.log("   Catalyst intel:", catalystIntel.length);  // NEW LOG
+    console.log("   Catalyst intel:", catalystIntel ? "YES" : "NO");  // NEW LOG
     
     // ============================================
     // CALL AI
@@ -351,7 +334,7 @@ ${toneContext}`;
         characterPersonality: !!characterContext,
         chatSessions: chatHistory.length,
         relatedChapters: relatedChapters.length,
-        catalystIntel: catalystIntel.length  // NEW FIELD
+        catalystIntel: !!catalystIntel  // NEW FIELD
       }
     });
     
@@ -373,5 +356,6 @@ app.listen(PORT, () => {
   console.log(`   Models: ${PRIMARY_MODEL}, ${BACKUP_MODEL}, ${TERTIARY_MODEL}`);
   console.log(`   API Key configured: ${process.env.OPENROUTER_API_KEY ? 'YES ✅' : 'NO ❌'}`);
 });
+
 
 
