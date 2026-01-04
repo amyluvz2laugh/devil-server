@@ -223,8 +223,6 @@ async function getCatalystIntel(catalystTags) {
   console.log("⚠️ No catalyst intel found for this tag");
   return [];
 }
-
-
 // ============================================
 // HEALTH CHECK
 // ============================================
@@ -236,10 +234,11 @@ app.get('/', (req, res) => {
   });
 });
 
+// ============================================
+// UPDATED DEVIL POV - WITH CATALYST CONTEXT
+// ============================================
+// Replace your existing /devil-pov endpoint with this:
 
-// ============================================
-// DEVIL POV - WITH FULL CONTEXT FROM WIX
-// ============================================
 app.post('/devil-pov', async (req, res) => {
   try {
     console.log("👿 Devil POV - Full context mode");
@@ -264,7 +263,7 @@ app.post('/devil-pov', async (req, res) => {
     console.log("🔍 Fetching context from Wix CMS...");
     const contextStart = Date.now();
     
-    const [characterContext, chatHistory, relatedChapters] = await Promise.all([
+    const [characterContext, chatHistory, relatedChapters, catalystIntel] = await Promise.all([
       getCharacterContext(characterTags),
       getChatHistory(characterTags),
       getRelatedChapters(storyTags),
@@ -292,6 +291,7 @@ ${toneContext}`;
     if (characterContext) {
       systemPrompt += `\n\nYOUR CORE PERSONALITY:\n${characterContext}`;
     }
+    
     // Add catalyst intel - NEW SECTION
     if (catalystIntel.length > 0) {
       systemPrompt += `\n\nNARRATIVE CATALYSTS & PLOT HOOKS:\n`;
@@ -365,62 +365,6 @@ ${toneContext}`;
 });
 
 // ============================================
-// INTEL SEARCH ENDPOINT - NEW!
-// ============================================
-app.post('/api/search', async (req, res) => {
-  try {
-    const { characterTags, storyTags, catalystTags } = req.body;
-    
-    console.log('🔍 Intel Search Request:', { characterTags, storyTags, catalystTags });
-    
-    const results = {
-      characters: [],
-      chapters: [],
-      chats: [],
-      catalysts: []
-    };
-    
-    // Search Characters
-    if (characterTags) {
-      const charResult = await queryWixCMS("Characters", {
-        charactertags: { $eq: characterTags }
-      }, 100);
-      results.characters.push(...charResult.items.map(item => item.data));
-    }
-    
-    // Search Chapters
-    if (storyTags) {
-      const chapterResult = await queryWixCMS("BackupChapters", {
-        storyTag: { $eq: storyTags }
-      }, 100);
-      results.chapters.push(...chapterResult.items.map(item => item.data));
-    }
-    
-    // Search Chats
-    if (characterTags) {
-      const chatResult = await queryWixCMS("ChatWithCharacters", {
-        character: { $eq: characterTags }
-      }, 100);
-      results.chats.push(...chatResult.items.map(item => item.data));
-    }
-    
-    // Search Catalysts
-    if (catalystTags) {
-      const catalystResult = await queryWixCMS("Characters", {
-        toneTags: { $eq: catalystTags }
-      }, 100);
-      results.catalysts.push(...catalystResult.items.map(item => item.data));
-    }
-    
-    res.json(results);
-    
-  } catch (error) {
-    console.error('❌ Search error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// ============================================
 // START SERVER
 // ============================================
 const PORT = process.env.PORT || 3333;
@@ -429,4 +373,5 @@ app.listen(PORT, () => {
   console.log(`   Models: ${PRIMARY_MODEL}, ${BACKUP_MODEL}, ${TERTIARY_MODEL}`);
   console.log(`   API Key configured: ${process.env.OPENROUTER_API_KEY ? 'YES ✅' : 'NO ❌'}`);
 });
+
 
