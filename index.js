@@ -231,17 +231,18 @@ app.post('/devil-pov', async (req, res) => {
     const startTime = Date.now();
     
     const {
-      previousChapter,
+      // REMOVED: previousChapter,
       characterName,
       characterTags,
       storyTags,
       toneTags,
-      catalystTags  // NEW FIELD
+      catalystTags
     } = req.body;
     
-    if (!previousChapter) {
-      return res.status(400).json({ error: "No chapter provided" });
-    }
+    // REMOVED THIS VALIDATION:
+    // if (!previousChapter) {
+    //   return res.status(400).json({ error: "No chapter provided" });
+    // }
     
     // ============================================
     // FETCH ALL CONTEXT FROM WIX IN PARALLEL
@@ -253,7 +254,7 @@ app.post('/devil-pov', async (req, res) => {
       getCharacterContext(characterTags),
       getChatHistory(characterTags),
       getRelatedChapters(storyTags),
-      getCatalystIntel(catalystTags)  // NEW QUERY
+      getCatalystIntel(catalystTags)
     ]);
     
     console.log(`✅ Context fetched in ${Date.now() - contextStart}ms`);
@@ -267,23 +268,20 @@ app.post('/devil-pov', async (req, res) => {
     
     let systemPrompt = `You are ${characterName || 'the antagonist'}, a dark and complex character. 
 
-Write from YOUR perspective in response to what the author just wrote. Be DARK, VISCERAL, and UNAPOLOGETICALLY YOURSELF. Show your motivations, your twisted logic, your desires. Make the reader uncomfortable. Make them understand you even as they fear you.
+Write from YOUR perspective based on the story context and what's happened so far. Be DARK, VISCERAL, and UNAPOLOGETICALLY YOURSELF. Show your motivations, your twisted logic, your desires. Make the reader uncomfortable. Make them understand you even as they fear you.
 
 ${characterTraits}
 ${storyContext}
 ${toneContext}`;
 
-    // Add character personality
     if (characterContext) {
       systemPrompt += `\n\nYOUR CORE PERSONALITY:\n${characterContext}`;
     }
     
-    // Add catalyst intel - NEW SECTION
     if (catalystIntel) {
       systemPrompt += `\n\nNARRATIVE CATALYST:\n${catalystIntel}`;
     }
     
-    // Add related chapters
     if (relatedChapters.length > 0) {
       systemPrompt += `\n\nRELATED CHAPTERS FROM THIS STORY:\n`;
       relatedChapters.forEach(ch => {
@@ -291,7 +289,6 @@ ${toneContext}`;
       });
     }
     
-    // Add chat history
     if (chatHistory.length > 0) {
       systemPrompt += `\n\nCONVERSATIONS THE AUTHOR HAS HAD WITH YOU:\n`;
       chatHistory.forEach((session, idx) => {
@@ -302,14 +299,14 @@ ${toneContext}`;
       });
     }
     
-    systemPrompt += `\n\nWrite ONLY the chapter from your POV. No explanations, no meta-commentary. Pure character voice. This is YOUR response to what just happened.`;
+    systemPrompt += `\n\nWrite the next chapter from your POV based on everything above. No explanations, no meta-commentary. Pure character voice. Continue the story from YOUR dark perspective.`;
     
     console.log("📊 Context summary:");
     console.log("   Total prompt length:", systemPrompt.length, "chars");
     console.log("   Character personality:", characterContext ? "YES" : "NO");
     console.log("   Chat history:", chatHistory.length, "sessions");
     console.log("   Related chapters:", relatedChapters.length);
-    console.log("   Catalyst intel:", catalystIntel ? "YES" : "NO");  // NEW LOG
+    console.log("   Catalyst intel:", catalystIntel ? "YES" : "NO");
     
     // ============================================
     // CALL AI
@@ -319,7 +316,7 @@ ${toneContext}`;
     
     const result = await callAI([
       { role: "system", content: systemPrompt },
-      { role: "user", content: `This is what the author just wrote:\n\n${previousChapter}\n\nNow write YOUR response to these events from your twisted perspective:` }
+      { role: "user", content: `Write the next chapter from your twisted perspective, picking up from where the story left off:` }  // CHANGED THIS LINE
     ], 0.9, 2500);
     
     console.log(`✅ AI responded in ${Date.now() - aiStart}ms`);
@@ -334,7 +331,7 @@ ${toneContext}`;
         characterPersonality: !!characterContext,
         chatSessions: chatHistory.length,
         relatedChapters: relatedChapters.length,
-        catalystIntel: !!catalystIntel  // NEW FIELD
+        catalystIntel: !!catalystIntel
       }
     });
     
@@ -356,6 +353,7 @@ app.listen(PORT, () => {
   console.log(`   Models: ${PRIMARY_MODEL}, ${BACKUP_MODEL}, ${TERTIARY_MODEL}`);
   console.log(`   API Key configured: ${process.env.OPENROUTER_API_KEY ? 'YES ✅' : 'NO ❌'}`);
 });
+
 
 
 
