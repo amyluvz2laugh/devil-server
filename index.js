@@ -231,18 +231,12 @@ app.post('/devil-pov', async (req, res) => {
     const startTime = Date.now();
     
     const {
-      // REMOVED: previousChapter,
       characterName,
       characterTags,
       storyTags,
       toneTags,
       catalystTags
     } = req.body;
-    
-    // REMOVED THIS VALIDATION:
-    // if (!previousChapter) {
-    //   return res.status(400).json({ error: "No chapter provided" });
-    // }
     
     // ============================================
     // FETCH ALL CONTEXT FROM WIX IN PARALLEL
@@ -260,7 +254,7 @@ app.post('/devil-pov', async (req, res) => {
     console.log(`✅ Context fetched in ${Date.now() - contextStart}ms`);
     
     // ============================================
-    // BUILD SYSTEM PROMPT
+    // BUILD SYSTEM PROMPT - CATALYST ENFORCED
     // ============================================
     const characterTraits = characterTags?.length > 0 ? `Character traits: ${characterTags.join(', ')}` : '';
     const storyContext = storyTags?.length > 0 ? `Story: ${storyTags.join(', ')}` : '';
@@ -268,20 +262,16 @@ app.post('/devil-pov', async (req, res) => {
     
     let systemPrompt = `You are ${characterName || 'the antagonist'}, a dark and complex character. 
 
-Write from YOUR perspective based on the story context and what's happened so far. Be DARK, VISCERAL, and UNAPOLOGETICALLY YOURSELF. Show your motivations, your twisted logic, your desires. Make the reader uncomfortable. Make them understand you even as they fear you.
-
 ${characterTraits}
 ${storyContext}
 ${toneContext}`;
 
+    // Add character personality
     if (characterContext) {
       systemPrompt += `\n\nYOUR CORE PERSONALITY:\n${characterContext}`;
     }
     
-    if (catalystIntel) {
-      systemPrompt += `\n\nNARRATIVE CATALYST:\n${catalystIntel}`;
-    }
-    
+    // Add related chapters
     if (relatedChapters.length > 0) {
       systemPrompt += `\n\nRELATED CHAPTERS FROM THIS STORY:\n`;
       relatedChapters.forEach(ch => {
@@ -289,6 +279,7 @@ ${toneContext}`;
       });
     }
     
+    // Add chat history
     if (chatHistory.length > 0) {
       systemPrompt += `\n\nCONVERSATIONS THE AUTHOR HAS HAD WITH YOU:\n`;
       chatHistory.forEach((session, idx) => {
@@ -299,25 +290,46 @@ ${toneContext}`;
       });
     }
     
-    systemPrompt += `\n\nWrite the next chapter from your POV based on everything above. No explanations, no meta-commentary. Pure character voice. Continue the story from YOUR dark perspective.`;
+    // ============================================
+    // CATALYST ENFORCEMENT - THIS IS NON-NEGOTIABLE
+    // ============================================
+    let userPrompt = `Write the next chapter from your twisted perspective, picking up from where the story left off.
+
+Be DARK, VISCERAL, and UNAPOLOGETICALLY YOURSELF. Show your motivations, your twisted logic, your desires. Make the reader uncomfortable. Make them understand you even as they fear you.
+
+Write ONLY the chapter from your POV. No explanations, no meta-commentary. Pure character voice.`;
+
+    if (catalystIntel) {
+      // Put catalyst in the USER message instead of system - this makes it MANDATORY
+      userPrompt = `MANDATORY STORY BEATS - YOU MUST FOLLOW THESE EXACTLY:
+${catalystIntel}
+
+Now write the next chapter from your twisted perspective. You MUST hit the beats specified above. Do not deviate from the catalyst structure. Do not add your own beats or skip any required beats.
+
+Be DARK, VISCERAL, and UNAPOLOGETICALLY YOURSELF in HOW you execute these beats, but the WHAT (the beats themselves) is non-negotiable.
+
+Write ONLY the chapter from your POV. No explanations, no meta-commentary. Pure character voice executing the required narrative beats.`;
+      
+      console.log("⚡ CATALYST ENFORCED - Beats are mandatory");
+    }
     
     console.log("📊 Context summary:");
     console.log("   Total prompt length:", systemPrompt.length, "chars");
     console.log("   Character personality:", characterContext ? "YES" : "NO");
     console.log("   Chat history:", chatHistory.length, "sessions");
     console.log("   Related chapters:", relatedChapters.length);
-    console.log("   Catalyst intel:", catalystIntel ? "YES" : "NO");
+    console.log("   Catalyst intel:", catalystIntel ? "ENFORCED ⚡" : "NO");
     
     // ============================================
-    // CALL AI
+    // CALL AI - Lower temperature for compliance
     // ============================================
     console.log("🤖 Calling AI...");
     const aiStart = Date.now();
     
     const result = await callAI([
       { role: "system", content: systemPrompt },
-      { role: "user", content: `Write the next chapter from your twisted perspective, picking up from where the story left off:` }  // CHANGED THIS LINE
-    ], 0.9, 2500);
+      { role: "user", content: userPrompt }
+    ], 0.7, 2500);  // LOWERED TEMP from 0.9 to 0.7 for better instruction following
     
     console.log(`✅ AI responded in ${Date.now() - aiStart}ms`);
     console.log(`🎉 Total time: ${Date.now() - startTime}ms`);
@@ -331,7 +343,8 @@ ${toneContext}`;
         characterPersonality: !!characterContext,
         chatSessions: chatHistory.length,
         relatedChapters: relatedChapters.length,
-        catalystIntel: !!catalystIntel
+        catalystIntel: !!catalystIntel,
+        catalystEnforced: !!catalystIntel  // NEW FIELD
       }
     });
     
@@ -353,6 +366,7 @@ app.listen(PORT, () => {
   console.log(`   Models: ${PRIMARY_MODEL}, ${BACKUP_MODEL}, ${TERTIARY_MODEL}`);
   console.log(`   API Key configured: ${process.env.OPENROUTER_API_KEY ? 'YES ✅' : 'NO ❌'}`);
 });
+
 
 
 
