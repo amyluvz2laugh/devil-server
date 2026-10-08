@@ -221,15 +221,95 @@ async function getCatalystIntel(catalystTags) {
 }
 
 // ============================================
+// CLEAN WIX ITEM DATA (strips system fields + empties)
+// ============================================
+function cleanItemData(data = {}) {
+  const skip = ['_id', '_owner', '_createdDate', '_updatedDate'];
+  const cleaned = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (skip.includes(key)) continue;
+    if (value === undefined || value === null || value === "") continue;
+    if (Array.isArray(value) && value.length === 0) continue;
+    cleaned[key] = value;
+  }
+  return cleaned;
+}
+
+// ============================================
+// GET WRAITH RECORD FROM WIX
+// ============================================
+async function getWraithRecordTags(wraithTags) {
+  if (!wraithTags || wraithTags.length === 0) {
+    return "";
+  }
+
+  const tags = (Array.isArray(wraithTags) ? wraithTags : [wraithTags]).filter(Boolean);
+  console.log("👻 Fetching wraith record:", tags);
+
+  const fields = ["locationTag", "ritualTag", "symboltag"];
+  const conditions = [];
+  tags.forEach(tag => {
+    fields.forEach(field => {
+      conditions.push({ [field]: { $contains: tag } });
+    });
+  });
+
+  const result = await queryWixCMS("WraithRecords", { $or: conditions }, 3);
+
+  if (result.items.length > 0) {
+    const wraithInfo = result.items
+      .map(item => JSON.stringify(cleanItemData(item.data), null, 2))
+      .join("\n\n");
+    console.log(`✅ Wraith record: ${result.items.length} found`);
+    return wraithInfo;
+  }
+
+  console.log("⚠️ No wraith record found for these tags");
+  return "";
+}
+
+// ============================================
+// GET LOREBOOK FROM WIX
+// ============================================
+async function getLorebookTags(loreTags) {
+  if (!loreTags || loreTags.length === 0) {
+    return "";
+  }
+
+  const tags = (Array.isArray(loreTags) ? loreTags : [loreTags]).filter(Boolean);
+  console.log("📖 Fetching lorebook entries:", tags);
+
+  const fields = ["orgTag", "bloodlinesTag", "lawTag", "magicTag", "secretsTag", "mythTag"];
+  const conditions = [];
+  tags.forEach(tag => {
+    fields.forEach(field => {
+      conditions.push({ [field]: { $contains: tag } });
+    });
+  });
+
+  const result = await queryWixCMS("Lorebook", { $or: conditions }, 5);
+
+  if (result.items.length > 0) {
+    const loreInfo = result.items
+      .map(item => JSON.stringify(cleanItemData(item.data), null, 2))
+      .join("\n\n");
+    console.log(`✅ Lorebook: ${result.items.length} entries found`);
+    return loreInfo;
+  }
+
+  console.log("⚠️ No lorebook entries found for these tags");
+  return "";
+}
+
+// ============================================
 // UPDATED DEVIL POV - WITH CATALYST CONTEXT
 // ============================================
-// Replace your existing /devil-pov endpoint with this:
 
 app.post('/devil-pov', async (req, res) => {
   try {
     console.log("👿 Devil POV - Full context mode");
     const startTime = Date.now();
-    
+
     const {
       characterName,
       characterTags,
@@ -237,40 +317,62 @@ app.post('/devil-pov', async (req, res) => {
       toneTags,
       catalystTags
     } = req.body;
-    
+
+    // Accept either casing from the frontend
+    const wraithTags = req.body.wraithTags || req.body.WraithTags || [];
+    const loreTags = req.body.loreTags || req.body.LoreTags || [];
+
     // ============================================
     // FETCH ALL CONTEXT FROM WIX IN PARALLEL
     // ============================================
     console.log("🔍 Fetching context from Wix CMS...");
     const contextStart = Date.now();
-    
-    const [characterContext, chatHistory, relatedChapters, catalystIntel] = await Promise.all([
+
+    const [characterContext, chatHistory, relatedChapters, catalystIntel, wraithRecord, loreIntel] = await Promise.all([
       getCharacterContext(characterTags),
       getChatHistory(characterTags),
       getRelatedChapters(storyTags),
-      getCatalystIntel(catalystTags)
+      getCatalystIntel(catalystTags),
+      getWraithRecordTags(wraithTags),
+      getLorebookTags(loreTags)
     ]);
-    
+
     console.log(`✅ Context fetched in ${Date.now() - contextStart}ms`);
-    
+
     // ============================================
-    // BUILD SYSTEM PROMPT - CATALYST ENFORCED
+    // BUILD SYSTEM PROMPT
     // ============================================
-    const characterTraits = characterTags?.length > 0 ? `Character traits: ${characterTags.join(', ')}` : '';
-    const storyContext = storyTags?.length > 0 ? `Story: ${storyTags.join(', ')}` : '';
-    const toneContext = toneTags?.length > 0 ? `Tone: ${toneTags.join(', ')}` : '';
-    
-    let systemPrompt = `You are ${characterName || 'the antagonist'}, a dark and complex character. 
+    const toList = (tags) => Array.isArray(tags) ? tags.join(', ') : tags;
+
+    const characterTraits = characterTags?.length > 0 ? `Character traits: ${toList(characterTags)}` : '';
+    const storyContext = storyTags?.length > 0 ? `Story: ${toList(storyTags)}` : '';
+    const toneContext = toneTags?.length > 0 ? `Tone: ${toList(toneTags)}` : '';
+    const wraithContext = wraithTags?.length > 0 ? `Wraith Record: ${toList(wraithTags)}` : '';
+    const loreContext = loreTags?.length > 0 ? `Lorebook: ${toList(loreTags)}` : '';
+
+    let systemPrompt = `You are ${characterName || 'the antagonist'}, a dark and complex character.
 
 ${characterTraits}
 ${storyContext}
-${toneContext}`;
+${toneContext}
+${wraithContext}
+${loreContext}`;
 
     // Add character personality
     if (characterContext) {
       systemPrompt += `\n\nYOUR CORE PERSONALITY:\n${characterContext}`;
     }
-    
+
+    // Add wraith record
+    if (wraithRecord) {
+      systemPrompt += `\n\nWRAITH RECORD (locations, rituals, symbols - treat as canon):\n${wraithRecord}`;
+    }
+
+    // Add lorebook
+    if (loreIntel) {
+      systemPrompt += `\n\nLOREBOOK (world canon - do not contradict):\n${loreIntel}`;
+    }
+
     // Add related chapters
     if (relatedChapters.length > 0) {
       systemPrompt += `\n\nRELATED CHAPTERS FROM THIS STORY:\n`;
@@ -278,7 +380,7 @@ ${toneContext}`;
         systemPrompt += `[${ch.title}]\n${ch.content}\n\n`;
       });
     }
-    
+
     // Add chat history
     if (chatHistory.length > 0) {
       systemPrompt += `\n\nCONVERSATIONS THE AUTHOR HAS HAD WITH YOU:\n`;
@@ -289,7 +391,7 @@ ${toneContext}`;
         });
       });
     }
-    
+
     // ============================================
     // CATALYST ENFORCEMENT - THIS IS NON-NEGOTIABLE
     // ============================================
@@ -300,7 +402,6 @@ Be DARK, VISCERAL, and UNAPOLOGETICALLY YOURSELF. Show your motivations, your tw
 Write ONLY the chapter from your POV. No explanations, no meta-commentary. Pure character voice.`;
 
     if (catalystIntel) {
-      // Put catalyst in the USER message instead of system - this makes it MANDATORY
       userPrompt = `MANDATORY STORY BEATS - YOU MUST FOLLOW THESE EXACTLY:
 ${catalystIntel}
 
@@ -309,31 +410,33 @@ Now write the next chapter from your twisted perspective. You MUST hit the beats
 Be DARK, VISCERAL, and UNAPOLOGETICALLY YOURSELF in HOW you execute these beats, but the WHAT (the beats themselves) is non-negotiable.
 
 Write ONLY the chapter from your POV. No explanations, no meta-commentary. Pure character voice executing the required narrative beats.`;
-      
+
       console.log("⚡ CATALYST ENFORCED - Beats are mandatory");
     }
-    
+
     console.log("📊 Context summary:");
     console.log("   Total prompt length:", systemPrompt.length, "chars");
     console.log("   Character personality:", characterContext ? "YES" : "NO");
     console.log("   Chat history:", chatHistory.length, "sessions");
     console.log("   Related chapters:", relatedChapters.length);
     console.log("   Catalyst intel:", catalystIntel ? "ENFORCED ⚡" : "NO");
-    
+    console.log("   Wraith record:", wraithRecord ? "YES" : "NO");
+    console.log("   Lorebook:", loreIntel ? "YES" : "NO");
+
     // ============================================
-    // CALL AI - Lower temperature for compliance
+    // CALL AI
     // ============================================
     console.log("🤖 Calling AI...");
     const aiStart = Date.now();
-    
+
     const result = await callAI([
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt }
-    ], 0.7, 2500);  // LOWERED TEMP from 0.9 to 0.7 for better instruction following
-    
+    ], 0.7, 2500);
+
     console.log(`✅ AI responded in ${Date.now() - aiStart}ms`);
     console.log(`🎉 Total time: ${Date.now() - startTime}ms`);
-    
+
     res.json({
       status: 'success',
       result: result,
@@ -344,15 +447,17 @@ Write ONLY the chapter from your POV. No explanations, no meta-commentary. Pure 
         chatSessions: chatHistory.length,
         relatedChapters: relatedChapters.length,
         catalystIntel: !!catalystIntel,
-        catalystEnforced: !!catalystIntel  // NEW FIELD
+        catalystEnforced: !!catalystIntel,
+        wraithRecord: !!wraithRecord,
+        loreIntel: !!loreIntel
       }
     });
-    
+
   } catch (err) {
     console.error("❌ Devil POV error:", err);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Devil POV failed',
-      details: err.message 
+      details: err.message
     });
   }
 });
