@@ -176,18 +176,18 @@ async function getRelatedChapters(storyTags) {
   const storyTag = Array.isArray(storyTags) ? storyTags[0] : storyTags;
   console.log("📚 Fetching chapters with tag:", storyTag);
   
-  const result = await queryWixCMS("BackupChapters", {
+  const result = await queryWixCMS("Chapters", {
     storyTag: { $eq: storyTag }
-  }, 3);
-  
+  }, 20);
+
   if (result.items.length > 0) {
     console.log(`✅ Found ${result.items.length} related chapters`);
-    
-    const chapters = result.items.map(item => ({
-      title: item.data?.title || "Untitled",
-      content: (item.data?.chapterContent || "").substring(0, 1500)
+
+    const chapters = result.items.map((item, i) => ({
+      title: `Chapter ${i + 1}`,
+      content: (item.data?.summary || "").substring(0, 800)
     }));
-    
+
     return chapters;
   }
   
