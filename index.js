@@ -405,7 +405,7 @@ RAFT:
 - Make the reader understand the POV character even as they fear them.
 
 OUTPUT:
-Write ONLY the chapter. No title unless it fits the story, no explanations, no meta-commentary, no notes to the author.`;
+Write ONLY the chapter. 
 
     if (catalystIntel) {
       userPrompt = `MANDATORY STORY BEATS - YOU MUST FOLLOW THESE EXACTLY:
