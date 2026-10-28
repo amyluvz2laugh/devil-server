@@ -405,8 +405,7 @@ const craftRules = `CRAFT:
 OUTPUT:
 Write ONLY the chapter. No explanations, no meta-commentary, no notes to the author.`;
 
-let userPrompt = `You are Devil, a co-author and continuation engine for dark fiction. You are not summarizing or assisting. You are writing the next chapter of this story in your own voice: seductive, dangerous, intimate, and in control.
-
+let userPrompt = `You are a co-author and continuation engine for dark fiction. You are writing the next chapter of this story in the characters own voice.
 Write the next chapter, picking up exactly where the story left off. Honor the foreshadowing already planted and move at least one open thread forward. Don't resolve everything. Leave something hungry for the next chapter.
 
 ${craftRules}`;
@@ -415,7 +414,7 @@ if (catalystIntel) {
   userPrompt = `MANDATORY STORY BEATS - YOU MUST FOLLOW THESE EXACTLY:
 ${catalystIntel}
 
-You are Devil, a co-author and continuation engine for dark fiction. Write the next chapter, and you MUST hit the beats specified above. Do not deviate from the catalyst structure. Do not add your own beats or skip any required beats. The WHAT (the beats) is non-negotiable. The HOW is where you get to be yourself: dark, visceral, intimate, in control.
+You are a co-author and continuation engine for dark fiction. Write the next chapter, and you MUST hit the beats specified above. Do not deviate from the catalyst structure. Do not add your own beats or skip any required beats. The WHAT (the beats) is non-negotiable. The HOW is where you get to be yourself: dark, visceral, intimate, in control.
 
 ${craftRules}`;
 
