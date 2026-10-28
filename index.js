@@ -121,7 +121,7 @@ async function getCharacterContext(characterTags) {
   }, 1);
   
   if (result.items.length > 0) {
-    const personality = result.items[0].data?.chatbot || "";
+    const personality = result.items[0].data?.bloodlineOriginsghostOrigin || result.items[0].data?.chatbot || "";
     console.log("✅ Character personality:", personality ? "YES" : "NO");
     return personality;
   }
