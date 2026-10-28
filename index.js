@@ -395,28 +395,21 @@ ${loreContext}`;
 // ============================================
 // CATALYST ENFORCEMENT - THIS IS NON-NEGOTIABLE
 // ============================================
-const craftRules = `CRAFT:
-- Stay inside one POV and let the reader feel the world through that character's bias, wants, and blind spots. Show twisted logic through what they notice and what they justify, not through announcing it.
-- Dread and tension come from specificity: a hand, a sound, a pause, a detail that's slightly wrong. Restraint hits harder than excess, so build it, then let it land.
-- Vary your rhythm. Short, brutal lines after long, hypnotic ones. Don't open the same way twice.
-- Canon is law. Use the names, rules, and history in your context exactly as given, and never contradict established intel. If something isn't covered, invent boldly but consistently.
-- Make the reader understand the POV character even as they fear them.
+let userPrompt = `Write the next chapter from your twisted perspective, picking up from where the story left off.
 
-OUTPUT:
-Write ONLY the chapter. No explanations, no meta-commentary, no notes to the author.`;
+Be DARK, VISCERAL, and UNAPOLOGETICALLY YOURSELF. Show your motivations, your twisted logic, your desires. Make the reader uncomfortable. Make them understand you even as they fear you.
 
-let userPrompt = `You are a co-author and continuation engine for dark fiction. You are writing the next chapter of this story in the characters own voice.
-Write the next chapter, picking up exactly where the story left off. Honor the foreshadowing already planted and move at least one open thread forward. Don't resolve everything. Leave something hungry for the next chapter.
-
-${craftRules}`;
+Write ONLY the chapter from your POV. No explanations, no meta-commentary. Pure character voice.`;
 
 if (catalystIntel) {
   userPrompt = `MANDATORY STORY BEATS - YOU MUST FOLLOW THESE EXACTLY:
 ${catalystIntel}
 
-You are a co-author and continuation engine for dark fiction. Write the next chapter, and you MUST hit the beats specified above. Do not deviate from the catalyst structure. Do not add your own beats or skip any required beats. The WHAT (the beats) is non-negotiable. The HOW is where you get to be yourself: dark, visceral, intimate, in control.
+Now write the next chapter from your twisted perspective. You MUST hit the beats specified above. Do not deviate from the catalyst structure. Do not add your own beats or skip any required beats.
 
-${craftRules}`;
+Be DARK, VISCERAL, and UNAPOLOGETICALLY YOURSELF in HOW you execute these beats, but the WHAT (the beats themselves) is non-negotiable.
+
+Write ONLY the chapter from your POV. No explanations, no meta-commentary. Pure character voice executing the required narrative beats.`;
 
   console.log("⚡ CATALYST ENFORCED - Beats are mandatory");
 }
