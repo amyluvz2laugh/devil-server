@@ -11,7 +11,7 @@ const WIX_ACCOUNT_ID = process.env.WIX_ACCOUNT_ID;
 const WIX_SITE_ID = process.env.WIX_SITE_ID;
 
 // Model configuration
-const PRIMARY_MODEL = "bytedance/ui-tars-1.5-7b";
+const PRIMARY_MODEL = "anthracite-org/magnum-v4-72b";
 const BACKUP_MODEL = "deepseek/deepseek-v3.2";
 const TERTIARY_MODEL = "mistralai/mistral-large";
 
