@@ -11,7 +11,7 @@ const WIX_ACCOUNT_ID = process.env.WIX_ACCOUNT_ID;
 const WIX_SITE_ID = process.env.WIX_SITE_ID;
 
 // Model configuration
-const PRIMARY_MODEL = "nousresearch/hermes-4-405b";
+const PRIMARY_MODEL = "sao10k/l3.1-euryale-70b";
 const BACKUP_MODEL = "deepseek/deepseek-v3.2";
 const TERTIARY_MODEL = "mistralai/mistral-large";
 
