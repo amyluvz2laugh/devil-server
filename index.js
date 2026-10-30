@@ -11,7 +11,7 @@ const WIX_ACCOUNT_ID = process.env.WIX_ACCOUNT_ID;
 const WIX_SITE_ID = process.env.WIX_SITE_ID;
 
 // Model configuration
-const PRIMARY_MODEL = "aion-labs/aion-3.5";
+const PRIMARY_MODEL = "google/gemini-4-argon:batch";
 const BACKUP_MODEL = "deepseek/deepseek-v3.2";
 const TERTIARY_MODEL = "mistralai/mistral-large";
 
