@@ -18,7 +18,7 @@ const TERTIARY_MODEL = "mistralai/mistral-large";
 // ============================================
 // AI CALL WITH FALLBACK
 // ============================================
-async function callAI(messages, temperature = 0.85-0.95, maxTokens = 3500) {
+async function callAI(messages, temperature = 0.85-0.95, maxTokens = 4000) {
   const models = [PRIMARY_MODEL, BACKUP_MODEL, TERTIARY_MODEL];
   const apiKey = process.env.OPENROUTER_API_KEY;
   
