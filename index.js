@@ -395,7 +395,7 @@ ${loreContext}`;
 // ============================================
 // CATALYST ENFORCEMENT - THIS IS NON-NEGOTIABLE
 // ============================================
-let userPrompt = `Write the next chapter from your twisted perspective, picking up from where the story left off.
+let userPrompt = `Write the next chapter from your twisted perspective, picking up from where the story left off - aiming for 1200 words minimum.
 
 Be DARK, VISCERAL, and UNAPOLOGETICALLY YOURSELF. Show your motivations, your twisted logic, your desires. Make the reader uncomfortable. Make them understand you even as they fear you.
 
