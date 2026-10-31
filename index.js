@@ -395,17 +395,17 @@ ${loreContext}`;
 // ============================================
 // CATALYST ENFORCEMENT - THIS IS NON-NEGOTIABLE
 // ============================================
-let userPrompt = `Write the next chapter from your twisted perspective, picking up from where the story left off - aiming for 1200 words and dropping at a cliff hanger.
+let userPrompt = `Write the next chapter from your twisted perspective, picking up from where the story left off - minimum of 1400 words and maximum of 1600 and dropping at a cliff hanger.
 
 Be DARK, VISCERAL, and UNAPOLOGETICALLY YOURSELF. Show your motivations, your twisted logic, your desires. Make the reader uncomfortable. Make them understand you even as they fear you.
 
-Write ONLY the chapter from your POV. No explanations, no meta-commentary. Pure character voice.`;
+Write ONLY the chapter from your POV. Feel free to escalate, create new scenes within narrative, and challenge the story. No explanations, no meta-commentary. Pure character voice.`;
 
 if (catalystIntel) {
   userPrompt = `MANDATORY STORY BEATS - YOU MUST FOLLOW THESE EXACTLY:
 ${catalystIntel}
 
-Now write the next chapter from your twisted perspective. You MUST hit the beats specified above. Do not deviate from the catalyst structure. Do not add your own beats or skip any required beats.
+Now write the next chapter from your twisted perspective. You MUST hit the beats specified above. Do not deviate from the catalyst structure. But feel free to expand. 
 
 Be DARK, VISCERAL, and UNAPOLOGETICALLY YOURSELF in HOW you execute these beats, but the WHAT (the beats themselves) is non-negotiable.
 
