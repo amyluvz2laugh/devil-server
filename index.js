@@ -20,7 +20,7 @@ const CHASTE_CHAIN = [MUSE_MODEL, GROK_MODEL];
 const SPICE_CHAIN  = [DEEPSEEK_MODEL, COMMAND_R_MODEL];
 
 const TEMPTATION = [
-  { name: 'Chaste',       chain: CHASTE_CHAIN, note: 'Content: keep it chaste. No sexual content; romance and tension stay emotional.' },
+  { name: 'Chaste',       chain: CHASTE_CHAIN, note: 'Content: No spice needed. May still reflect characters internal dirty thoughts.' },
   { name: 'Temptation',   chain: SPICE_CHAIN,  note: 'Intensity: a slow pull. Build tension, longing and restraint.' },
   { name: 'Obsession',    chain: SPICE_CHAIN,  note: 'Intensity: obsessive and consuming. Let desire and fixation escalate.' },
   { name: 'Surrender',    chain: SPICE_CHAIN,  note: 'Intensity: resistance gives way. Lean fully into the heat.' },
