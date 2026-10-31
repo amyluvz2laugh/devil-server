@@ -11,14 +11,14 @@ const WIX_ACCOUNT_ID = process.env.WIX_ACCOUNT_ID;
 const WIX_SITE_ID = process.env.WIX_SITE_ID;
 
 // Model configuration
-const PRIMARY_MODEL = "cohere/command-r-plus-08-2024";
+const PRIMARY_MODEL = "moonshotai/kimi-k2.7-code";
 const BACKUP_MODEL = "deepseek/deepseek-v3.2";
 const TERTIARY_MODEL = "mistralai/mistral-large";
 
 // ============================================
 // AI CALL WITH FALLBACK
 // ============================================
-async function callAI(messages, temperature = 0.85-0.95, maxTokens = 3000) {
+async function callAI(messages, temperature = 0.85-0.95, maxTokens = 3500) {
   const models = [PRIMARY_MODEL, BACKUP_MODEL, TERTIARY_MODEL];
   const apiKey = process.env.OPENROUTER_API_KEY;
   
