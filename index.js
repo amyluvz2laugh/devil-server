@@ -11,15 +11,31 @@ const WIX_ACCOUNT_ID = process.env.WIX_ACCOUNT_ID;
 const WIX_SITE_ID = process.env.WIX_SITE_ID;
 
 // Model configuration
-const PRIMARY_MODEL = "meta/muse-spark-1.3";
-const BACKUP_MODEL = "deepseek/deepseek-v3.2";
-const TERTIARY_MODEL = "mistralai/mistral-large";
+const MUSE_MODEL      = "meta/muse-spark-1.3";
+const GROK_MODEL      = "meta-llama/llama-3.1-70b-instruct";       // confirm the exact slug on OpenRouter
+const DEEPSEEK_MODEL  = "deepseek/deepseek-v3.2";
+const COMMAND_R_MODEL = "cohere/command-r-08-2024";     // confirm the exact slug on OpenRouter
 
+const CHASTE_CHAIN = [MUSE_MODEL, GROK_MODEL];
+const SPICE_CHAIN  = [DEEPSEEK_MODEL, COMMAND_R_MODEL];
+
+const TEMPTATION = [
+  { name: 'Chaste',       chain: CHASTE_CHAIN, note: 'Content: keep it chaste. No sexual content; romance and tension stay emotional.' },
+  { name: 'Temptation',   chain: SPICE_CHAIN,  note: 'Intensity: a slow pull. Build tension, longing and restraint.' },
+  { name: 'Obsession',    chain: SPICE_CHAIN,  note: 'Intensity: obsessive and consuming. Let desire and fixation escalate.' },
+  { name: 'Surrender',    chain: SPICE_CHAIN,  note: 'Intensity: resistance gives way. Lean fully into the heat.' },
+  { name: 'Unrestrained', chain: SPICE_CHAIN,  note: 'Intensity: nothing held back. Follow the scene wherever it goes.' }
+];
+
+function getTemptation(level) {
+  const n = Number(level);
+  return TEMPTATION[Number.isInteger(n) && n >= 0 && n <= 4 ? n : 0];
+}
 // ============================================
 // AI CALL WITH FALLBACK
 // ============================================
-async function callAI(messages, temperature = 0.85-0.95, maxTokens = 3500) {
-  const models = [PRIMARY_MODEL, BACKUP_MODEL, TERTIARY_MODEL];
+async function callAI(messages, temperature = 0.9, maxTokens = 3500, label = 'AI', modelChain) {
+  const models = (Array.isArray(modelChain) && modelChain.length) ? modelChain : CHASTE_CHAIN;
   const apiKey = process.env.OPENROUTER_API_KEY;
   
   if (!apiKey) {
@@ -28,7 +44,7 @@ async function callAI(messages, temperature = 0.85-0.95, maxTokens = 3500) {
   
   for (const model of models) {
     try {
-      console.log(`🤖 Trying model: ${model}`);
+      console.log(`🤖 [${label}] Trying model: ${model}`);
       
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
@@ -315,7 +331,8 @@ app.post('/devil-pov', async (req, res) => {
       characterTags,
       storyTags,
       toneTags,
-      catalystTags
+      catalystTags,
+      temptation
     } = req.body;
 
     // Accept either casing from the frontend
@@ -392,6 +409,10 @@ ${loreContext}`;
       });
     }
 
+    const t = getTemptation(temptation);
+    systemPrompt += `\n\n${t.note}`;
+    console.log(`🌡️ Temptation level: ${t.name}`);
+
 // ============================================
 // CATALYST ENFORCEMENT - THIS IS NON-NEGOTIABLE
 // ============================================
@@ -422,17 +443,18 @@ Write ONLY the chapter from your POV. No explanations, no meta-commentary. Pure 
     console.log("   Catalyst intel:", catalystIntel ? "ENFORCED ⚡" : "NO");
     console.log("   Wraith record:", wraithRecord ? "YES" : "NO");
     console.log("   Lorebook:", loreIntel ? "YES" : "NO");
-
+    console.log(`🤖 [${label}] Trying model: ${model}`);
+    
     // ============================================
     // CALL AI
     // ============================================
     console.log("🤖 Calling AI...");
     const aiStart = Date.now();
 
-    const result = await callAI([
+        const result = await callAI([
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt }
-    ], 0.7, 2500);
+    ], 0.7, 2500, 'DevilPOV', t.chain);
 
     console.log(`✅ AI responded in ${Date.now() - aiStart}ms`);
     console.log(`🎉 Total time: ${Date.now() - startTime}ms`);
@@ -468,15 +490,6 @@ Write ONLY the chapter from your POV. No explanations, no meta-commentary. Pure 
 const PORT = process.env.PORT || 3333;
 app.listen(PORT, () => {
   console.log(`🔥 Devil Muse listening on port ${PORT}`);
-  console.log(`   Models: ${PRIMARY_MODEL}, ${BACKUP_MODEL}, ${TERTIARY_MODEL}`);
+  console.log(`   Chaste: ${CHASTE_CHAIN.join(' → ')} | Spice: ${SPICE_CHAIN.join(' → ')}`);
   console.log(`   API Key configured: ${process.env.OPENROUTER_API_KEY ? 'YES ✅' : 'NO ❌'}`);
 });
-
-
-
-
-
-
-
-
-
