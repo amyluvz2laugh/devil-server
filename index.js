@@ -458,7 +458,7 @@ Write ONLY the chapter from your POV. No explanations, no meta-commentary. Pure 
 
     console.log(`✅ AI responded in ${Date.now() - aiStart}ms`);
     console.log(`🎉 Total time: ${Date.now() - startTime}ms`);
-    console.log(`🤖 [${label}] Trying model: ${model}`);
+    
 
     res.json({
       status: 'success',
