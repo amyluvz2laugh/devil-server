@@ -34,7 +34,7 @@ function getTemptation(level) {
 // ============================================
 // AI CALL WITH FALLBACK
 // ============================================
-async function callAI(messages, temperature = 0.9, maxTokens = 3500, label = 'AI', modelChain) {
+async function callAI(messages, temperature = 0.9, maxTokens = 4500, label = 'AI', modelChain) {
   const models = (Array.isArray(modelChain) && modelChain.length) ? modelChain : CHASTE_CHAIN;
   const apiKey = process.env.OPENROUTER_API_KEY;
   
