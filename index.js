@@ -454,7 +454,7 @@ Write ONLY the chapter from your POV. No explanations, no meta-commentary. Pure 
         const result = await callAI([
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt }
-    ], 0.7, 2500, 'DevilPOV', t.chain);
+    ], 0.85, 5500, 'DevilPOV', t.chain);
 
     console.log(`✅ AI responded in ${Date.now() - aiStart}ms`);
     console.log(`🎉 Total time: ${Date.now() - startTime}ms`);
