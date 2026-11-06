@@ -34,7 +34,7 @@ function getTemptation(level) {
 // ============================================
 // AI CALL WITH FALLBACK
 // ============================================
-async function callAI(messages, temperature = 0.85, maxTokens = 3500, label = 'AI', modelChain) {
+async function callAI(messages, temperature = 0.75, maxTokens = 3500, label = 'AI', modelChain) {
   const models = (Array.isArray(modelChain) && modelChain.length) ? modelChain : CHASTE_CHAIN;
   const apiKey = process.env.OPENROUTER_API_KEY;
   
@@ -454,7 +454,7 @@ Write ONLY the chapter from your POV. No explanations, no meta-commentary. Pure 
         const result = await callAI([
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt }
-    ], 0.85, 3500, 'DevilPOV', t.chain);
+    ], 0.75, 3500, 'DevilPOV', t.chain);
 
     console.log(`✅ AI responded in ${Date.now() - aiStart}ms`);
     console.log(`🎉 Total time: ${Date.now() - startTime}ms`);
