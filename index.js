@@ -13,7 +13,7 @@ const WIX_SITE_ID = process.env.WIX_SITE_ID;
 // Model configuration
 const MUSE_MODEL      = "meta/muse-spark-1.3";
 const GROK_MODEL      = "meta-llama/llama-3.1-70b-instruct";       // confirm the exact slug on OpenRouter
-const DEEPSEEK_MODEL  = "deepseek/deepseek-v3.2";
+const DEEPSEEK_MODEL  = "deepseek/deepseek-r1-0528";
 const COMMAND_R_MODEL = "cohere/command-r-08-2024";     // confirm the exact slug on OpenRouter
 
 const CHASTE_CHAIN = [MUSE_MODEL, GROK_MODEL];
@@ -24,7 +24,7 @@ const TEMPTATION = [
   { name: 'Temptation',   chain: SPICE_CHAIN,  note: 'Intensity: a slow pull. Build tension, longing and restraint.' },
   { name: 'Obsession',    chain: SPICE_CHAIN,  note: 'Intensity: obsessive and consuming. Let desire and fixation escalate.' },
   { name: 'Surrender',    chain: SPICE_CHAIN,  note: 'Intensity: resistance gives way. Lean fully into the heat.' },
-  { name: 'Unrestrained', chain: SPICE_CHAIN,  note: 'Intensity: nothing held back. Follow the scene wherever it goes.' }
+  { name: 'Unrestrained', chain: SPICE_CHAIN,  note: 'Intensity: nothing held back. Scene can contain explicit sexual content.' }
 ];
 
 function getTemptation(level) {
