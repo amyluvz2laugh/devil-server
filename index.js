@@ -417,6 +417,7 @@ ${loreContext}`;
     systemPrompt += `\n\n${t.note}`;
     if (feralMode) systemPrompt += `\n\n${FERAL_NOTE}`;   // <-- goes here
     console.log(`🌡️ Temptation level: ${t.name}`);
+    console.log(`🐺 Feral mode: ${feralMode ? 'ON' : 'off'}`);   // <-- here
 
  
 
@@ -499,6 +500,5 @@ const PORT = process.env.PORT || 3333;
 app.listen(PORT, () => {
   console.log(`🔥 Devil Muse listening on port ${PORT}`);
   console.log(`   Chaste: ${CHASTE_CHAIN.join(' → ')} | Spice: ${SPICE_CHAIN.join(' → ')}`);
-  console.log(`🐺 Feral mode: ${feralMode ? 'ON' : 'off'}`);
   console.log(`   API Key configured: ${process.env.OPENROUTER_API_KEY ? 'YES ✅' : 'NO ❌'}`);
 });
