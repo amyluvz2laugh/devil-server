@@ -27,7 +27,7 @@ const TEMPTATION = [
   { name: 'Surrender',    chain: SPICE_CHAIN,  note: 'Intensity: resistance gives way. Lean fully into the heat.' },
   { name: 'Unrestrained', chain: SPICE_CHAIN,  note: 'Intensity: nothing held back. Scene can contain explicit sexual content.' }
 ];
-const FERAL_NOTE = `FERAL MODE: UPDATE FERAL NOTE.`;
+const FERAL_NOTE = `FERAL MODE: You are in feral mode. Be creative. Original and unhinged.`;
 
 function getTemptation(level) {
   const n = Number(level);
