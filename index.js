@@ -18,6 +18,7 @@ const COMMAND_R_MODEL = "cohere/command-r-08-2024";     // confirm the exact slu
 
 const CHASTE_CHAIN = [MUSE_MODEL, GROK_MODEL];
 const SPICE_CHAIN  = [DEEPSEEK_MODEL, COMMAND_R_MODEL];
+const FERAL_CHAIN  = [DEEPSEEK_MODEL, COMMAND_R_MODEL];   // <-- add (DEEPSEEK_MODEL is your x-ai/grok-4.5 slug)
 
 const TEMPTATION = [
   { name: 'Chaste',       chain: CHASTE_CHAIN, note: 'Content: No spice needed. May still reflect characters internal dirty thoughts.' },
@@ -26,6 +27,7 @@ const TEMPTATION = [
   { name: 'Surrender',    chain: SPICE_CHAIN,  note: 'Intensity: resistance gives way. Lean fully into the heat.' },
   { name: 'Unrestrained', chain: SPICE_CHAIN,  note: 'Intensity: nothing held back. Scene can contain explicit sexual content.' }
 ];
+const FERAL_NOTE = `FERAL MODE: UPDATE FERAL NOTE.`;
 
 function getTemptation(level) {
   const n = Number(level);
@@ -332,7 +334,8 @@ app.post('/devil-pov', async (req, res) => {
       storyTags,
       toneTags,
       catalystTags,
-      temptation
+      temptation,
+      feralMode
     } = req.body;
 
     // Accept either casing from the frontend
@@ -409,9 +412,13 @@ ${loreContext}`;
       });
     }
 
+
     const t = getTemptation(temptation);
     systemPrompt += `\n\n${t.note}`;
+    if (feralMode) systemPrompt += `\n\n${FERAL_NOTE}`;   // <-- goes here
     console.log(`🌡️ Temptation level: ${t.name}`);
+
+ 
 
 // ============================================
 // CATALYST ENFORCEMENT - THIS IS NON-NEGOTIABLE
@@ -454,7 +461,7 @@ Write ONLY the chapter from your POV. No explanations, no meta-commentary. Pure 
         const result = await callAI([
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt }
-    ], 1.0, 3500, 'DevilPOV', t.chain);
+    ], 1.0, 3500, 'DevilPOV', feralMode ? FERAL_CHAIN : t.chain);
 
     console.log(`✅ AI responded in ${Date.now() - aiStart}ms`);
     console.log(`🎉 Total time: ${Date.now() - startTime}ms`);
@@ -492,5 +499,6 @@ const PORT = process.env.PORT || 3333;
 app.listen(PORT, () => {
   console.log(`🔥 Devil Muse listening on port ${PORT}`);
   console.log(`   Chaste: ${CHASTE_CHAIN.join(' → ')} | Spice: ${SPICE_CHAIN.join(' → ')}`);
+  console.log(`🐺 Feral mode: ${feralMode ? 'ON' : 'off'}`);
   console.log(`   API Key configured: ${process.env.OPENROUTER_API_KEY ? 'YES ✅' : 'NO ❌'}`);
 });
