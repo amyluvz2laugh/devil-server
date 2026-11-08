@@ -71,8 +71,15 @@ async function callAI(messages, temperature = 0.85, maxTokens = 3500, label = 'A
       }
       
       const data = await response.json();
-      console.log(`✅ Success with ${model}`);
-      return data.choices[0].message.content;
+      const text = data?.choices?.[0]?.message?.content;
+
+      if (!text || !text.trim()) {
+      console.error(`⚠️ ${model} returned empty content (finish_reason: ${data?.choices?.[0]?.finish_reason})`);
+      continue;
+     }
+
+     console.log(`✅ Success with ${model}`);
+     return text;
       
     } catch (error) {
       console.error(`❌ ${model} error:`, error.message);
