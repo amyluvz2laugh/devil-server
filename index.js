@@ -12,16 +12,16 @@ const WIX_SITE_ID = process.env.WIX_SITE_ID;
 
 // Model configuration
 const MUSE_MODEL      = "meta/muse-spark-1.3";
-const GROK_MODEL      = "meta-llama/llama-3.1-70b-instruct";   // confirm the exact slug on OpenRouter
+const GROK_MODEL      = "meta-llama/llama-4-scout";   // confirm the exact slug on OpenRouter
 const DEEPSEEK_MODEL  = "x-ai/grok-4.5";
 const COMMAND_R_MODEL = "cohere/command-r-08-2024";
 
 // Temperature per model (edit these numbers to play around)
 const MODEL_TEMPS = {
-  [MUSE_MODEL]: 0.8,
-  [GROK_MODEL]: 1.1,
-  [DEEPSEEK_MODEL]: 0.7,
-  [COMMAND_R_MODEL]: 0.9,
+  [MUSE_MODEL]: 0.65,
+  [GROK_MODEL]: 0.68,
+  [DEEPSEEK_MODEL]: 0.60,
+  [COMMAND_R_MODEL]:  0.55,
 };
 
 const CHASTE_CHAIN = [MUSE_MODEL, GROK_MODEL];
