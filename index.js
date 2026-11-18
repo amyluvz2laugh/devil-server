@@ -154,10 +154,29 @@ async function getCharacterContext(characterTags) {
   }, 1);
   
   if (result.items.length > 0) {
-    const personality = result.items[0].data?.bloodlineOriginsghostOrigin || result.items[0].data?.chatbot || "";
-    console.log("✅ Character personality:", personality ? "YES" : "NO");
-    return personality;
-  }
+  const d = result.items[0].data || {};
+
+  const personality = d.bloodlineOriginsghostOrigin || d.chatbot || "";
+
+  // Object fields come back as objects, but if your HTML force-saved them as strings, this handles both
+  const asText = (v) => {
+    if (!v) return "";
+    if (typeof v === "string") return v;
+    if (typeof v === "object" && Object.keys(v).length === 0) return "";
+    return JSON.stringify(v, null, 2);
+  };
+
+  const arcs = asText(d.testamentJson);
+  const fingerprints = asText(d.fingerprintsJson);
+
+  let context = personality;
+  if (arcs) context += `\n\nCHARACTER ARCS (your testament):\n${arcs}`;
+  if (fingerprints) context += `\n\nCHARACTER FINGERPRINTS (your signature traits and habits):\n${fingerprints}`;
+
+  console.log("✅ Character personality:", personality ? "YES" : "NO");
+  console.log("   Arcs:", arcs ? "YES" : "NO", "| Fingerprints:", fingerprints ? "YES" : "NO");
+  return context;
+}
   
   return "";
 }
