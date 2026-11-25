@@ -263,29 +263,40 @@ async function getRelatedChapters(storyTags) {
 }
 
 // ============================================
-// GET CATALYST INTEL FROM WIX
+// GET CATALYST INTEL FROM WIX (MULTI-CATALYST)
 // ============================================
 async function getCatalystIntel(catalystTags) {
   if (!catalystTags || catalystTags.length === 0) {
     return "";
   }
-  
-  const catalystTag = Array.isArray(catalystTags) ? catalystTags[0] : catalystTags;
-  console.log("⚡ Fetching catalyst intel:", catalystTag);
-  
-  const result = await queryWixCMS("Catalyst", {
-    title: { $contains: catalystTag }
-  }, 1);
-  
-  if (result.items.length > 0) {
-    const catalystData = result.items[0].data;
-    const catalystInfo = JSON.stringify(catalystData, null, 2);
-    console.log("✅ Catalyst intel:", catalystInfo ? "YES" : "NO");
-    return catalystInfo;
+
+  const tags = [...new Set(
+    (Array.isArray(catalystTags) ? catalystTags : [catalystTags])
+      .map(t => String(t).trim())
+      .filter(Boolean)
+  )];
+
+  if (tags.length === 0) return "";
+
+  async function fetchOne(catalystTag) {
+    console.log("⚡ Fetching catalyst intel:", catalystTag);
+
+    const result = await queryWixCMS("Catalyst", {
+      title: { $contains: catalystTag }
+    }, 1);
+
+    if (!result.items || result.items.length === 0) {
+      console.log("⚠️ No catalyst intel found for tag:", catalystTag);
+      return "";
+    }
+
+    const catalystInfo = JSON.stringify(result.items[0].data, null, 2);
+    console.log("✅ Catalyst intel:", catalystTag);
+    return `=== CATALYST: ${catalystTag} ===\n${catalystInfo}`;
   }
-  
-  console.log("⚠️ No catalyst intel found for this tag");
-  return "";
+
+  const blocks = (await Promise.all(tags.map(fetchOne))).filter(Boolean);
+  return blocks.join("\n\n");
 }
 
 // ============================================
