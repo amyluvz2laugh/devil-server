@@ -139,26 +139,22 @@ async function queryWixCMS(collection, filter = {}, limit = 10) {
 }
 
 // ============================================
-// GET CHARACTER CONTEXT FROM WIX
+// GET CHARACTER CONTEXT FROM WIX (MULTI-CHARACTER)
 // ============================================
 async function getCharacterContext(characterTags) {
   if (!characterTags || characterTags.length === 0) {
     return "";
   }
-  
-  const charTag = Array.isArray(characterTags) ? characterTags[0] : characterTags;
-  console.log("👤 Fetching character:", charTag);
-  
-  const result = await queryWixCMS("Characters", {
-    charactertags: { $eq: charTag }
-  }, 1);
-  
-  if (result.items.length > 0) {
-  const d = result.items[0].data || {};
 
-  const personality = d.bloodlineOriginsghostOrigin || d.chatbot || "";
+  // Normalize to an array, trim, and drop empties/duplicates
+  const tags = [...new Set(
+    (Array.isArray(characterTags) ? characterTags : [characterTags])
+      .map(t => String(t).trim())
+      .filter(Boolean)
+  )];
 
-  // Object fields come back as objects, but if your HTML force-saved them as strings, this handles both
+  if (tags.length === 0) return "";
+
   const asText = (v) => {
     if (!v) return "";
     if (typeof v === "string") return v;
@@ -166,19 +162,39 @@ async function getCharacterContext(characterTags) {
     return JSON.stringify(v, null, 2);
   };
 
-  const arcs = asText(d.testamentJson);
-  const fingerprints = asText(d.fingerprintsJson);
+  // Fetch one character's context block
+  async function fetchOne(charTag) {
+    console.log("👤 Fetching character:", charTag);
 
-  let context = personality;
-  if (arcs) context += `\n\nCHARACTER ARCS (your testament):\n${arcs}`;
-  if (fingerprints) context += `\n\nCHARACTER FINGERPRINTS (your signature traits and habits):\n${fingerprints}`;
+    const result = await queryWixCMS("Characters", {
+      charactertags: { $eq: charTag }
+    }, 1);
 
-  console.log("✅ Character personality:", personality ? "YES" : "NO");
-  console.log("   Arcs:", arcs ? "YES" : "NO", "| Fingerprints:", fingerprints ? "YES" : "NO");
-  return context;
-}
-  
-  return "";
+    if (!result.items || result.items.length === 0) {
+      console.log("⚠️ No character found for tag:", charTag);
+      return "";
+    }
+
+    const d = result.items[0].data || {};
+    const personality = d.bloodlineOriginsghostOrigin || d.chatbot || "";
+    const arcs = asText(d.testamentJson);
+    const fingerprints = asText(d.fingerprintsJson);
+
+    let block = `=== CHARACTER: ${charTag} ===\n${personality}`;
+    if (arcs) block += `\n\nCHARACTER ARCS (testament):\n${arcs}`;
+    if (fingerprints) block += `\n\nCHARACTER FINGERPRINTS (signature traits and habits):\n${fingerprints}`;
+
+    console.log(`✅ ${charTag} | personality:`, personality ? "YES" : "NO",
+      "| arcs:", arcs ? "YES" : "NO",
+      "| fingerprints:", fingerprints ? "YES" : "NO");
+
+    return block;
+  }
+
+  // Run all lookups in parallel
+  const blocks = (await Promise.all(tags.map(fetchOne))).filter(Boolean);
+
+  return blocks.join("\n\n");
 }
 
 // ============================================
